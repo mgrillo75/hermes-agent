@@ -5,6 +5,7 @@ Handles: hermes gateway [run|start|stop|restart|status|install|uninstall|setup]
 """
 
 import asyncio
+import json
 import os
 import shutil
 import signal
@@ -129,6 +130,116 @@ def _get_parent_pid(pid: int) -> int | None:
     return parent_pid if parent_pid > 0 else None
 
 
+def _read_gateway_pid(path: Path) -> int | None:
+    """Read a gateway PID from a ``gateway.pid`` file."""
+    if not path.exists():
+        return None
+    try:
+        raw = path.read_text(encoding="utf-8").strip()
+    except OSError:
+        return None
+    if not raw:
+        return None
+
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        try:
+            pid = int(raw)
+        except ValueError:
+            return None
+    else:
+        if isinstance(payload, int):
+            pid = payload
+        elif isinstance(payload, dict):
+            try:
+                pid = int(payload["pid"])
+            except (KeyError, TypeError, ValueError):
+                return None
+        else:
+            return None
+
+    return pid if pid > 0 else None
+
+
+def _collect_gateway_pids_from_pid_files(
+    *,
+    exclude_pids: set[int],
+    all_profiles: bool,
+) -> list[int]:
+    """Collect live gateway PIDs from Hermes home directories."""
+    try:
+        from gateway.status import pid_is_running
+    except ImportError:
+        return []
+
+    root = get_default_hermes_root().resolve()
+    current_home = get_hermes_home().resolve()
+    candidate_files = [current_home / "gateway.pid"]
+
+    if all_profiles:
+        candidate_files.append(root / "gateway.pid")
+        profiles_root = root / "profiles"
+        if profiles_root.is_dir():
+            for entry in sorted(profiles_root.iterdir()):
+                if entry.is_dir():
+                    candidate_files.append(entry / "gateway.pid")
+
+    pids: list[int] = []
+    seen_paths: set[Path] = set()
+    seen_pids: set[int] = set()
+    current_pid = os.getpid()
+
+    for pid_file in candidate_files:
+        try:
+            resolved = pid_file.resolve()
+        except OSError:
+            resolved = pid_file
+        if resolved in seen_paths:
+            continue
+        seen_paths.add(resolved)
+
+        pid = _read_gateway_pid(pid_file)
+        if pid is None or pid == current_pid or pid in exclude_pids or pid in seen_pids:
+            continue
+        if not pid_is_running(pid):
+            continue
+        pids.append(pid)
+        seen_pids.add(pid)
+
+    return pids
+
+
+def _looks_like_gateway_command(command: str) -> bool:
+    """Return True when ``command`` looks like a manual gateway runner."""
+    normalized = " ".join((command or "").strip().split()).lower()
+    if not normalized:
+        return False
+
+    tokens = [token.strip("\"'") for token in normalized.split()]
+    joined = " ".join(tokens)
+    if "gateway/run.py" in joined:
+        return True
+
+    has_runner = (
+        "hermes_cli.main" in joined
+        or "hermes_cli/main.py" in joined
+        or any(token.endswith(("hermes", "hermes.exe", "hermes.cmd")) for token in tokens)
+    )
+    if not has_runner:
+        return False
+
+    try:
+        gateway_index = tokens.index("gateway")
+    except ValueError:
+        return False
+
+    next_token = tokens[gateway_index + 1] if gateway_index + 1 < len(tokens) else ""
+    if next_token in {"status", "stop", "restart", "start", "install", "uninstall", "setup", "help"}:
+        return False
+    return next_token in {"", "run"} or next_token.startswith("-")
+
+
 def _is_pid_ancestor_of_current_process(target_pid: int) -> bool:
     """Return True when ``target_pid`` is this process or one of its ancestors."""
     if target_pid <= 0:
@@ -171,16 +282,12 @@ def find_gateway_pids(exclude_pids: set | None = None, all_profiles: bool = Fals
     """
     _exclude = exclude_pids or set()
     pids = [pid for pid in _get_service_pids() if pid not in _exclude]
-    patterns = [
-        "hermes_cli.main gateway",
-        "hermes_cli.main --profile",
-        "hermes_cli.main -p",
-        "hermes_cli/main.py gateway",
-        "hermes_cli/main.py --profile",
-        "hermes_cli/main.py -p",
-        "hermes gateway",
-        "gateway/run.py",
-    ]
+    for pid in _collect_gateway_pids_from_pid_files(
+        exclude_pids=_exclude,
+        all_profiles=all_profiles,
+    ):
+        if pid not in pids:
+            pids.append(pid)
     current_home = str(get_hermes_home().resolve())
     current_profile_arg = _profile_arg(current_home)
     current_profile_name = current_profile_arg.split()[-1] if current_profile_arg else ""
@@ -212,7 +319,7 @@ def find_gateway_pids(exclude_pids: set | None = None, all_profiles: bool = Fals
                     current_cmd = line[len("CommandLine="):]
                 elif line.startswith("ProcessId="):
                     pid_str = line[len("ProcessId="):]
-                    if any(p in current_cmd for p in patterns) and (all_profiles or _matches_current_profile(current_cmd)):
+                    if _looks_like_gateway_command(current_cmd) and (all_profiles or _matches_current_profile(current_cmd)):
                         try:
                             pid = int(pid_str)
                             if pid != os.getpid() and pid not in pids and pid not in _exclude:
@@ -253,7 +360,7 @@ def find_gateway_pids(exclude_pids: set | None = None, all_profiles: bool = Fals
                     continue
                 if pid == os.getpid() or pid in pids or pid in _exclude:
                     continue
-                if any(pattern in command for pattern in patterns) and (all_profiles or _matches_current_profile(command)):
+                if _looks_like_gateway_command(command) and (all_profiles or _matches_current_profile(command)):
                     pids.append(pid)
     except (OSError, subprocess.TimeoutExpired):
         pass
@@ -298,7 +405,7 @@ def stop_profile_gateway() -> bool:
     Returns True if a process was stopped, False if none was found.
     """
     try:
-        from gateway.status import get_running_pid, remove_pid_file
+        from gateway.status import get_running_pid, pid_is_running, remove_pid_file, terminate_pid
     except ImportError:
         return False
 
@@ -307,21 +414,22 @@ def stop_profile_gateway() -> bool:
         return False
 
     try:
-        os.kill(pid, signal.SIGTERM)
+        terminate_pid(pid, force=False)
     except ProcessLookupError:
         pass  # Already gone
     except PermissionError:
         print(f"⚠ Permission denied to kill PID {pid}")
         return False
+    except OSError as exc:
+        print(f"Failed to kill PID {pid}: {exc}")
+        return False
 
     # Wait briefly for it to exit
     import time as _time
     for _ in range(20):
-        try:
-            os.kill(pid, 0)
-            _time.sleep(0.5)
-        except (ProcessLookupError, PermissionError):
+        if not pid_is_running(pid):
             break
+        _time.sleep(0.5)
 
     remove_pid_file()
     return True
@@ -331,7 +439,7 @@ def is_linux() -> bool:
     return sys.platform.startswith('linux')
 
 
-from hermes_constants import is_container, is_termux, is_wsl
+from hermes_constants import get_default_hermes_root, is_container, is_termux, is_wsl
 
 
 def _wsl_systemd_operational() -> bool:
@@ -3173,7 +3281,13 @@ def gateway_command(args):
             launchd_status(deep)
         else:
             # Check for manually running processes
-            pids = find_gateway_pids()
+            try:
+                from gateway.status import get_running_pid
+                current_profile_pid = get_running_pid()
+            except ImportError:
+                current_profile_pid = None
+
+            pids = [current_profile_pid] if current_profile_pid is not None else find_gateway_pids()
             if pids:
                 print(f"✓ Gateway is running (PID: {', '.join(map(str, pids))})")
                 print("  (Running manually, not as a system service)")

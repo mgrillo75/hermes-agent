@@ -53,31 +53,115 @@ def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _taskkill_pid(pid: int, *, force: bool) -> None:
+    """Terminate a Windows process tree with ``taskkill``."""
+    cmd = ["taskkill", "/PID", str(pid), "/T"]
+    if force:
+        cmd.append("/F")
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    if result.returncode != 0:
+        details = (result.stderr or result.stdout or "").strip()
+        raise OSError(details or f"taskkill failed for PID {pid}")
+
+
 def terminate_pid(pid: int, *, force: bool = False) -> None:
     """Terminate a PID with platform-appropriate force semantics.
 
     POSIX uses SIGTERM/SIGKILL. Windows uses taskkill /T /F for true force-kill
     because os.kill(..., SIGTERM) is not equivalent to a tree-killing hard stop.
     """
-    if force and _IS_WINDOWS:
+    if _IS_WINDOWS and force:
         try:
-            result = subprocess.run(
-                ["taskkill", "/PID", str(pid), "/T", "/F"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
+            _taskkill_pid(pid, force=True)
+            return
         except FileNotFoundError:
             os.kill(pid, signal.SIGTERM)
             return
 
-        if result.returncode != 0:
-            details = (result.stderr or result.stdout or "").strip()
-            raise OSError(details or f"taskkill failed for PID {pid}")
-        return
-
     sig = signal.SIGTERM if not force else getattr(signal, "SIGKILL", signal.SIGTERM)
-    os.kill(pid, sig)
+    try:
+        os.kill(pid, sig)
+    except PermissionError:
+        if not _IS_WINDOWS:
+            raise
+        try:
+            _taskkill_pid(pid, force=force)
+        except OSError:
+            if force:
+                raise
+            _taskkill_pid(pid, force=True)
+        except FileNotFoundError:
+            raise
+
+
+def _pid_is_running_windows(pid: int) -> bool:
+    """Return True when a Windows PID refers to a live process."""
+    try:
+        import ctypes
+        from ctypes import wintypes
+    except Exception:
+        try:
+            os.kill(pid, 0)
+        except (ProcessLookupError, PermissionError, OSError, SystemError):
+            return False
+        return True
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    process_query_limited_information = 0x1000
+    still_active = 259
+
+    open_process = kernel32.OpenProcess
+    open_process.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    open_process.restype = wintypes.HANDLE
+
+    get_exit_code_process = kernel32.GetExitCodeProcess
+    get_exit_code_process.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
+    get_exit_code_process.restype = wintypes.BOOL
+
+    close_handle = kernel32.CloseHandle
+    close_handle.argtypes = [wintypes.HANDLE]
+    close_handle.restype = wintypes.BOOL
+
+    handle = open_process(process_query_limited_information, False, pid)
+    if not handle:
+        return False
+
+    try:
+        exit_code = wintypes.DWORD()
+        if not get_exit_code_process(handle, ctypes.byref(exit_code)):
+            return False
+        return exit_code.value == still_active
+    finally:
+        close_handle(handle)
+
+
+def pid_is_running(pid: int) -> bool:
+    """Return True when ``pid`` appears to refer to a live process.
+
+    Windows uses the Win32 process API because ``os.kill(pid, 0)`` can raise
+    inconsistent exceptions there even for valid PIDs.
+    """
+    try:
+        pid = int(pid)
+    except (TypeError, ValueError):
+        return False
+
+    if pid <= 0:
+        return False
+
+    if _IS_WINDOWS:
+        return _pid_is_running_windows(pid)
+
+    try:
+        os.kill(pid, 0)
+    except (ProcessLookupError, PermissionError, OSError, SystemError):
+        return False
+    return True
 
 
 def _scope_hash(identity: str) -> str:
@@ -289,6 +373,39 @@ def remove_pid_file() -> None:
         pass
 
 
+def _remove_pid_file_if_matches(record: Optional[dict[str, Any]]) -> None:
+    """Remove the PID file only if it still matches the inspected record."""
+    if record is None:
+        remove_pid_file()
+        return
+
+    try:
+        current = _read_pid_record()
+        if current:
+            try:
+                expected_pid = int(record["pid"])
+                current_pid = int(current["pid"])
+            except (KeyError, TypeError, ValueError):
+                expected_pid = None
+                current_pid = None
+
+            if expected_pid is not None and current_pid is not None and current_pid != expected_pid:
+                return
+
+            expected_start = record.get("start_time")
+            current_start = current.get("start_time")
+            if (
+                expected_start is not None
+                and current_start is not None
+                and current_start != expected_start
+            ):
+                return
+
+        _get_pid_path().unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
 def acquire_scoped_lock(scope: str, identity: str, metadata: Optional[dict[str, Any]] = None) -> tuple[bool, Optional[dict[str, Any]]]:
     """Acquire a machine-local lock keyed by scope + identity.
 
@@ -327,9 +444,7 @@ def acquire_scoped_lock(scope: str, identity: str, metadata: Optional[dict[str, 
 
         stale = existing_pid is None
         if not stale:
-            try:
-                os.kill(existing_pid, 0)
-            except (ProcessLookupError, PermissionError):
+            if not pid_is_running(existing_pid):
                 stale = True
             else:
                 current_start = _get_process_start_time(existing_pid)
@@ -427,24 +542,22 @@ def get_running_pid() -> Optional[int]:
     try:
         pid = int(record["pid"])
     except (KeyError, TypeError, ValueError):
-        remove_pid_file()
+        _remove_pid_file_if_matches(record)
         return None
 
-    try:
-        os.kill(pid, 0)  # signal 0 = existence check, no actual signal sent
-    except (ProcessLookupError, PermissionError):
-        remove_pid_file()
+    if not pid_is_running(pid):
+        _remove_pid_file_if_matches(record)
         return None
 
     recorded_start = record.get("start_time")
     current_start = _get_process_start_time(pid)
     if recorded_start is not None and current_start is not None and current_start != recorded_start:
-        remove_pid_file()
+        _remove_pid_file_if_matches(record)
         return None
 
     if not _looks_like_gateway_process(pid):
         if not _record_looks_like_gateway(record):
-            remove_pid_file()
+            _remove_pid_file_if_matches(record)
             return None
 
     return pid
