@@ -1,5 +1,6 @@
 """Tests for hermes_cli.gateway."""
 
+import json
 from types import SimpleNamespace
 from unittest.mock import patch, call
 
@@ -267,3 +268,82 @@ class TestWaitForGatewayExit:
 
         assert killed == 2
         assert calls == [(11, True), (22, True)]
+
+
+class TestWindowsGatewayDiscovery:
+    def test_find_gateway_pids_uses_pid_file_when_windows_command_line_is_blank(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        (tmp_path / "gateway.pid").write_text(
+            json.dumps({"pid": 4124, "kind": "hermes-gateway"}),
+            encoding="utf-8",
+        )
+
+        monkeypatch.setattr(gateway, "is_windows", lambda: True)
+        monkeypatch.setattr(gateway, "_get_service_pids", lambda: set())
+        monkeypatch.setattr("gateway.status.pid_is_running", lambda pid: pid == 4124)
+        monkeypatch.setattr(
+            gateway.subprocess,
+            "run",
+            lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout="CommandLine=\nProcessId=4124\n", stderr=""),
+        )
+
+        assert gateway.find_gateway_pids() == [4124]
+
+    def test_find_gateway_pids_ignores_gateway_status_processes(self, monkeypatch):
+        monkeypatch.setattr(gateway, "is_windows", lambda: True)
+        monkeypatch.setattr(gateway, "_get_service_pids", lambda: set())
+        monkeypatch.setattr(gateway, "_collect_gateway_pids_from_pid_files", lambda **kwargs: [])
+        monkeypatch.setattr("os.getpid", lambda: 999)
+
+        stdout = (
+            "CommandLine=python -m hermes_cli.main gateway status\n"
+            "ProcessId=100\n"
+            "\n"
+            "CommandLine=python -m hermes_cli.main gateway run --replace\n"
+            "ProcessId=200\n"
+        )
+        monkeypatch.setattr(
+            gateway.subprocess,
+            "run",
+            lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout=stdout, stderr=""),
+        )
+
+        assert gateway.find_gateway_pids() == [200]
+
+    def test_gateway_status_prefers_current_profile_pid(self, monkeypatch, capsys):
+        monkeypatch.setattr(gateway, "supports_systemd_services", lambda: False)
+        monkeypatch.setattr(gateway, "is_macos", lambda: False)
+        monkeypatch.setattr(gateway, "find_gateway_pids", lambda exclude_pids=None, all_profiles=False: [99999])
+        monkeypatch.setattr(gateway, "_runtime_health_lines", lambda: [])
+        monkeypatch.setattr("gateway.status.get_running_pid", lambda: 4124)
+
+        gateway.gateway_command(SimpleNamespace(gateway_command="status", deep=False, system=False))
+
+        out = capsys.readouterr().out
+        assert "PID: 4124" in out
+        assert "99999" not in out
+
+    def test_stop_profile_gateway_uses_terminate_pid(self, monkeypatch):
+        calls = []
+
+        monkeypatch.setattr("gateway.status.get_running_pid", lambda: 4124)
+        monkeypatch.setattr("gateway.status.pid_is_running", lambda pid: False)
+        monkeypatch.setattr("gateway.status.remove_pid_file", lambda: calls.append(("cleanup", None)))
+        monkeypatch.setattr("gateway.status.terminate_pid", lambda pid, force=False: calls.append((pid, force)))
+
+        assert gateway.stop_profile_gateway() is True
+        assert calls == [(4124, False), ("cleanup", None)]
+
+    def test_stop_profile_gateway_handles_oserror(self, monkeypatch, capsys):
+        monkeypatch.setattr("gateway.status.get_running_pid", lambda: 4124)
+        monkeypatch.setattr("gateway.status.pid_is_running", lambda pid: True)
+        monkeypatch.setattr("gateway.status.remove_pid_file", lambda: None)
+
+        def fake_terminate(pid, force=False):
+            raise OSError("Access is denied")
+
+        monkeypatch.setattr("gateway.status.terminate_pid", fake_terminate)
+
+        assert gateway.stop_profile_gateway() is False
+        out = capsys.readouterr().out
+        assert "Failed to kill PID 4124" in out

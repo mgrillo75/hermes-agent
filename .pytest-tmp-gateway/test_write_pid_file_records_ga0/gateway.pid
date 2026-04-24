@@ -1,0 +1,1 @@
+{"pid": 27436, "kind": "hermes-gateway", "argv": ["C:\\Users\\MiguelGrillo\\Documents\\github-repos\\hermes-agent\\.venv\\Lib\\site-packages\\pytest\\__main__.py", "-o", "addopts=", "--basetemp=.pytest-tmp-gateway", "tests/gateway/test_status.py", "tests/gateway/test_runner_startup_failures.py"], "start_time": null}

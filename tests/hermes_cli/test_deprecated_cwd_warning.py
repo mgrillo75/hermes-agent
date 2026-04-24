@@ -62,3 +62,15 @@ class TestDeprecatedCwdWarning:
         captured = capsys.readouterr()
         assert "MESSAGING_CWD" in captured.err
         assert "TERMINAL_CWD" in captured.err
+
+    def test_windows_warning_uses_windows_example_path(self, monkeypatch, capsys):
+        monkeypatch.setenv("MESSAGING_CWD", r"C:\hermes")
+
+        import hermes_cli.config as config_mod
+
+        monkeypatch.setattr(config_mod, "_IS_WINDOWS", True)
+        warn = config_mod.warn_deprecated_cwd_env_vars
+        warn(config={})
+
+        captured = capsys.readouterr()
+        assert "cwd: C:/your/project/path" in captured.err

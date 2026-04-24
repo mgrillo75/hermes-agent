@@ -63,6 +63,45 @@ class TestGatewayPidState:
 
         assert status.get_running_pid() == os.getpid()
 
+    def test_get_running_pid_removes_stale_pid_file_for_other_process(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        pid_path = tmp_path / "gateway.pid"
+        pid_path.write_text(json.dumps({
+            "pid": 99999,
+            "kind": "hermes-gateway",
+            "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+            "start_time": 123,
+        }))
+
+        monkeypatch.setattr(status, "pid_is_running", lambda pid: False)
+
+        assert status.get_running_pid() is None
+        assert not pid_path.exists()
+
+    def test_pid_is_running_treats_oserror_as_not_running(self, monkeypatch):
+        monkeypatch.setattr(status, "_IS_WINDOWS", False)
+
+        def fake_kill(pid, sig):
+            raise OSError(87, "The parameter is incorrect")
+
+        monkeypatch.setattr(status.os, "kill", fake_kill)
+
+        assert status.pid_is_running(12345) is False
+
+    def test_pid_is_running_uses_windows_probe(self, monkeypatch):
+        monkeypatch.setattr(status, "_IS_WINDOWS", True)
+
+        calls = []
+
+        def fake_windows_probe(pid):
+            calls.append(pid)
+            return True
+
+        monkeypatch.setattr(status, "_pid_is_running_windows", fake_windows_probe)
+
+        assert status.pid_is_running(12345) is True
+        assert calls == [12345]
+
 
 class TestGatewayRuntimeStatus:
     def test_write_runtime_status_overwrites_stale_pid_on_restart(self, tmp_path, monkeypatch):
@@ -167,6 +206,49 @@ class TestTerminatePid:
 
         assert calls == [(456, status.signal.SIGTERM)]
 
+    def test_windows_permission_error_falls_back_to_taskkill(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(status, "_IS_WINDOWS", True)
+
+        def fake_kill(pid, sig):
+            raise PermissionError("denied")
+
+        def fake_run(cmd, capture_output=False, text=False, timeout=None):
+            calls.append((cmd, capture_output, text, timeout))
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+        monkeypatch.setattr(status.os, "kill", fake_kill)
+        monkeypatch.setattr(status.subprocess, "run", fake_run)
+
+        status.terminate_pid(789, force=False)
+
+        assert calls == [
+            (["taskkill", "/PID", "789", "/T"], True, True, 10)
+        ]
+
+    def test_windows_permission_error_retries_forceful_taskkill(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(status, "_IS_WINDOWS", True)
+
+        def fake_kill(pid, sig):
+            raise PermissionError("denied")
+
+        def fake_run(cmd, capture_output=False, text=False, timeout=None):
+            calls.append((cmd, capture_output, text, timeout))
+            if cmd == ["taskkill", "/PID", "790", "/T"]:
+                return SimpleNamespace(returncode=1, stdout="", stderr="needs /F")
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+        monkeypatch.setattr(status.os, "kill", fake_kill)
+        monkeypatch.setattr(status.subprocess, "run", fake_run)
+
+        status.terminate_pid(790, force=False)
+
+        assert calls == [
+            (["taskkill", "/PID", "790", "/T"], True, True, 10),
+            (["taskkill", "/PID", "790", "/T", "/F"], True, True, 10),
+        ]
+
 
 class TestScopedLocks:
     def test_acquire_scoped_lock_rejects_live_other_process(self, tmp_path, monkeypatch):
@@ -179,7 +261,7 @@ class TestScopedLocks:
             "kind": "hermes-gateway",
         }))
 
-        monkeypatch.setattr(status.os, "kill", lambda pid, sig: None)
+        monkeypatch.setattr(status, "pid_is_running", lambda pid: True)
         monkeypatch.setattr(status, "_get_process_start_time", lambda pid: 123)
 
         acquired, existing = status.acquire_scoped_lock("telegram-bot-token", "secret", metadata={"platform": "telegram"})

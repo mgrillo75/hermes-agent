@@ -1,0 +1,244 @@
+Compiled from "ApplicationScope.java"
+public final class com.inductiveautomation.ignition.common.model.ApplicationScope {
+  public static final int NONE;
+
+  public static final int GATEWAY;
+
+  public static final int DESIGNER;
+
+  public static final int CLIENT;
+
+  private static volatile int globalScope;
+
+  public static final int ALL;
+
+  public static int parseScope(java.lang.String);
+    Code:
+       0: aload_0
+       1: ifnonnull     6
+       4: iconst_0
+       5: ireturn
+       6: aload_0
+       7: invokevirtual #3                  // Method java/lang/String.toUpperCase:()Ljava/lang/String;
+      10: astore_0
+      11: ldc           #9                  // String A
+      13: aload_0
+      14: invokevirtual #11                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+      17: ifeq          23
+      20: bipush        7
+      22: ireturn
+      23: ldc           #15                 // String N
+      25: aload_0
+      26: invokevirtual #11                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+      29: ifeq          34
+      32: iconst_0
+      33: ireturn
+      34: iconst_0
+      35: istore_1
+      36: iload_1
+      37: aload_0
+      38: ldc           #17                 // String G
+      40: invokevirtual #19                 // Method java/lang/String.contains:(Ljava/lang/CharSequence;)Z
+      43: ifeq          50
+      46: iconst_1
+      47: goto          51
+      50: iconst_0
+      51: ior
+      52: istore_1
+      53: iload_1
+      54: aload_0
+      55: ldc           #23                 // String C
+      57: invokevirtual #19                 // Method java/lang/String.contains:(Ljava/lang/CharSequence;)Z
+      60: ifeq          67
+      63: iconst_4
+      64: goto          68
+      67: iconst_0
+      68: ior
+      69: istore_1
+      70: iload_1
+      71: aload_0
+      72: ldc           #25                 // String D
+      74: invokevirtual #19                 // Method java/lang/String.contains:(Ljava/lang/CharSequence;)Z
+      77: ifeq          84
+      80: iconst_2
+      81: goto          85
+      84: iconst_0
+      85: ior
+      86: istore_1
+      87: iload_1
+      88: ireturn
+
+  public static void init(int);
+    Code:
+       0: iload_0
+       1: putstatic     #27                 // Field globalScope:I
+       4: return
+
+  public static int getGlobalScope();
+    Code:
+       0: getstatic     #27                 // Field globalScope:I
+       3: iconst_m1
+       4: if_icmpeq     11
+       7: getstatic     #27                 // Field globalScope:I
+      10: ireturn
+      11: new           #31                 // class java/lang/IllegalStateException
+      14: dup
+      15: ldc           #33                 // String Scope has not been defined.
+      17: invokespecial #35                 // Method java/lang/IllegalStateException."<init>":(Ljava/lang/String;)V
+      20: athrow
+
+  public static java.lang.String getScopePrefix();
+    Code:
+       0: getstatic     #27                 // Field globalScope:I
+       3: tableswitch   { // 1 to 4
+                     1: 32
+                     2: 42
+                     3: 47
+                     4: 37
+               default: 47
+          }
+      32: ldc           #39                 // String gateway
+      34: goto          49
+      37: ldc           #41                 // String client
+      39: goto          49
+      42: ldc           #43                 // String designer
+      44: goto          49
+      47: ldc           #45                 // String unknown
+      49: areturn
+
+  public static boolean isGateway(int);
+    Code:
+       0: iload_0
+       1: iconst_1
+       2: iand
+       3: iconst_1
+       4: if_icmpne     11
+       7: iconst_1
+       8: goto          12
+      11: iconst_0
+      12: ireturn
+
+  public static boolean isClient(int);
+    Code:
+       0: iload_0
+       1: iconst_4
+       2: iand
+       3: iconst_4
+       4: if_icmpne     11
+       7: iconst_1
+       8: goto          12
+      11: iconst_0
+      12: ireturn
+
+  public static boolean isDesigner(int);
+    Code:
+       0: iload_0
+       1: iconst_2
+       2: iand
+       3: iconst_2
+       4: if_icmpne     11
+       7: iconst_1
+       8: goto          12
+      11: iconst_0
+      12: ireturn
+
+  public static java.lang.String toString(int);
+    Code:
+       0: iload_0
+       1: invokestatic  #47                 // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+       4: invokestatic  #53                 // Method java/util/Locale.getDefault:()Ljava/util/Locale;
+       7: invokestatic  #59                 // Method toString:(Ljava/lang/Integer;Ljava/util/Locale;)Ljava/lang/String;
+      10: areturn
+
+  public static java.lang.String toString(java.lang.Integer, java.util.Locale);
+    Code:
+       0: aload_0
+       1: ifnonnull     7
+       4: ldc           #63                 // String n/a
+       6: areturn
+       7: aload_0
+       8: invokevirtual #65                 // Method java/lang/Integer.intValue:()I
+      11: iconst_4
+      12: if_icmpne     29
+      15: invokestatic  #69                 // Method com/inductiveautomation/ignition/common/BundleUtil.get:()Lcom/inductiveautomation/ignition/common/BundleUtil;
+      18: aload_1
+      19: ldc           #75                 // String client.name
+      21: iconst_0
+      22: anewarray     #77                 // class java/lang/Object
+      25: invokevirtual #79                 // Method com/inductiveautomation/ignition/common/BundleUtil.getStringLenient:(Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+      28: areturn
+      29: aload_0
+      30: invokevirtual #65                 // Method java/lang/Integer.intValue:()I
+      33: iconst_2
+      34: if_icmpne     51
+      37: invokestatic  #69                 // Method com/inductiveautomation/ignition/common/BundleUtil.get:()Lcom/inductiveautomation/ignition/common/BundleUtil;
+      40: aload_1
+      41: ldc           #83                 // String designer.name
+      43: iconst_0
+      44: anewarray     #77                 // class java/lang/Object
+      47: invokevirtual #79                 // Method com/inductiveautomation/ignition/common/BundleUtil.getStringLenient:(Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+      50: areturn
+      51: aload_0
+      52: invokevirtual #65                 // Method java/lang/Integer.intValue:()I
+      55: iconst_1
+      56: if_icmpne     73
+      59: invokestatic  #69                 // Method com/inductiveautomation/ignition/common/BundleUtil.get:()Lcom/inductiveautomation/ignition/common/BundleUtil;
+      62: aload_1
+      63: ldc           #85                 // String gateway.name
+      65: iconst_0
+      66: anewarray     #77                 // class java/lang/Object
+      69: invokevirtual #79                 // Method com/inductiveautomation/ignition/common/BundleUtil.getStringLenient:(Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+      72: areturn
+      73: ldc           #87                 // String Unk (%d)
+      75: iconst_1
+      76: anewarray     #77                 // class java/lang/Object
+      79: dup
+      80: iconst_0
+      81: aload_0
+      82: aastore
+      83: invokestatic  #89                 // Method java/lang/String.format:(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+      86: areturn
+
+  public static java.lang.String toCode(int);
+    Code:
+       0: ldc           #93                 // String
+       2: astore_1
+       3: iload_0
+       4: invokestatic  #95                 // Method isClient:(I)Z
+       7: ifeq          17
+      10: aload_1
+      11: invokedynamic #99,  0             // InvokeDynamic #0:makeConcatWithConstants:(Ljava/lang/String;)Ljava/lang/String;
+      16: astore_1
+      17: iload_0
+      18: invokestatic  #103                // Method isDesigner:(I)Z
+      21: ifeq          31
+      24: aload_1
+      25: invokedynamic #106,  0            // InvokeDynamic #1:makeConcatWithConstants:(Ljava/lang/String;)Ljava/lang/String;
+      30: astore_1
+      31: iload_0
+      32: invokestatic  #107                // Method isGateway:(I)Z
+      35: ifeq          45
+      38: aload_1
+      39: invokedynamic #110,  0            // InvokeDynamic #2:makeConcatWithConstants:(Ljava/lang/String;)Ljava/lang/String;
+      44: astore_1
+      45: ldc           #111                // String CDG
+      47: aload_1
+      48: invokevirtual #11                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+      51: ifeq          57
+      54: ldc           #9                  // String A
+      56: astore_1
+      57: aload_1
+      58: areturn
+
+  private com.inductiveautomation.ignition.common.model.ApplicationScope();
+    Code:
+       0: aload_0
+       1: invokespecial #113                // Method java/lang/Object."<init>":()V
+       4: return
+
+  static {};
+    Code:
+       0: iconst_m1
+       1: putstatic     #27                 // Field globalScope:I
+       4: return
+}

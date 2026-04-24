@@ -1,0 +1,890 @@
+Compiled from "Resource.java"
+public interface com.inductiveautomation.ignition.common.resourcecollection.Resource {
+  public static final java.lang.String PLATFORM_MODULE_ID;
+
+  public static final java.lang.String DEFAULT_DATA_KEY;
+
+  public static final java.lang.String DEFAULT_JSON_KEY;
+
+  public static final java.lang.String DEFAULT_BACKUP_JSON_KEY;
+
+  public static final java.lang.String UNARY_RESOURCE_NAME;
+
+  public abstract java.lang.String getCollectionName();
+
+  public default java.lang.String getDefiningCollectionName();
+    Code:
+       0: aload_0
+       1: invokeinterface #1,  1            // InterfaceMethod getCollectionName:()Ljava/lang/String;
+       6: areturn
+
+  public default java.util.List<java.lang.String> getDefiningCollectionNames();
+    Code:
+       0: aload_0
+       1: invokeinterface #7,  1            // InterfaceMethod getDefiningCollectionName:()Ljava/lang/String;
+       6: invokestatic  #10                 // InterfaceMethod java/util/List.of:(Ljava/lang/Object;)Ljava/util/List;
+       9: areturn
+
+  public abstract com.inductiveautomation.ignition.common.resourcecollection.ResourcePath getResourcePath();
+
+  public default java.lang.String getResourceName();
+    Code:
+       0: aload_0
+       1: invokeinterface #16,  1           // InterfaceMethod getResourcePath:()Lcom/inductiveautomation/ignition/common/resourcecollection/ResourcePath;
+       6: invokevirtual #20                 // Method com/inductiveautomation/ignition/common/resourcecollection/ResourcePath.getName:()Ljava/lang/String;
+       9: areturn
+
+  public default java.lang.String getFolderPath();
+    Code:
+       0: aload_0
+       1: invokeinterface #16,  1           // InterfaceMethod getResourcePath:()Lcom/inductiveautomation/ignition/common/resourcecollection/ResourcePath;
+       6: invokevirtual #25                 // Method com/inductiveautomation/ignition/common/resourcecollection/ResourcePath.getPath:()Lcom/inductiveautomation/ignition/common/StringPath$CaseSensitiveStringPath;
+       9: invokevirtual #29                 // Method com/inductiveautomation/ignition/common/StringPath$CaseSensitiveStringPath.toString:()Ljava/lang/String;
+      12: areturn
+
+  public default com.inductiveautomation.ignition.common.resourcecollection.ResourceType getResourceType();
+    Code:
+       0: aload_0
+       1: invokeinterface #16,  1           // InterfaceMethod getResourcePath:()Lcom/inductiveautomation/ignition/common/resourcecollection/ResourcePath;
+       6: invokevirtual #34                 // Method com/inductiveautomation/ignition/common/resourcecollection/ResourcePath.getResourceType:()Lcom/inductiveautomation/ignition/common/resourcecollection/ResourceType;
+       9: areturn
+
+  public abstract boolean isUnary();
+
+  public abstract java.lang.String getDocumentation();
+
+  public default java.util.Optional<com.inductiveautomation.ignition.common.ImmutableBytes> getData();
+    Code:
+       0: aload_0
+       1: ldc           #38                 // String data.bin
+       3: invokeinterface #40,  2           // InterfaceMethod getData:(Ljava/lang/String;)Ljava/util/Optional;
+       8: areturn
+
+  public abstract java.util.Optional<com.inductiveautomation.ignition.common.ImmutableBytes> getData(java.lang.String);
+
+  public abstract java.util.Optional<java.io.InputStream> getDataStream(java.lang.String);
+
+  public abstract java.util.Optional<java.io.Reader> getDataReader(java.lang.String);
+
+  public abstract com.google.common.collect.ImmutableSet<java.lang.String> getDataKeys();
+
+  public abstract java.util.Optional<java.lang.String> getDataDigest(java.lang.String);
+
+  public abstract java.util.Map<java.lang.String, com.inductiveautomation.ignition.common.gson.JsonElement> getAttributes();
+
+  public default java.util.Optional<com.inductiveautomation.ignition.common.gson.JsonElement> getAttribute(java.lang.String);
+    Code:
+       0: aload_0
+       1: invokeinterface #44,  1           // InterfaceMethod getAttributes:()Ljava/util/Map;
+       6: aload_1
+       7: invokeinterface #48,  2           // InterfaceMethod java/util/Map.get:(Ljava/lang/Object;)Ljava/lang/Object;
+      12: checkcast     #54                 // class com/inductiveautomation/ignition/common/gson/JsonElement
+      15: invokestatic  #56                 // Method java/util/Optional.ofNullable:(Ljava/lang/Object;)Ljava/util/Optional;
+      18: areturn
+
+  public abstract int getApplicationScope();
+
+  public abstract int getVersion();
+
+  public abstract boolean isFolder();
+
+  public default boolean isModuleFolder();
+    Code:
+       0: aload_0
+       1: invokeinterface #62,  1           // InterfaceMethod isFolder:()Z
+       6: ifeq          25
+       9: aload_0
+      10: invokeinterface #66,  1           // InterfaceMethod getResourceType:()Lcom/inductiveautomation/ignition/common/resourcecollection/ResourceType;
+      15: invokevirtual #67                 // Method com/inductiveautomation/ignition/common/resourcecollection/ResourceType.typeId:()Ljava/lang/String;
+      18: ifnonnull     25
+      21: iconst_1
+      22: goto          26
+      25: iconst_0
+      26: ireturn
+
+  public default boolean isResourceTypeFolder();
+    Code:
+       0: aload_0
+       1: invokeinterface #62,  1           // InterfaceMethod isFolder:()Z
+       6: ifeq          40
+       9: aload_0
+      10: invokeinterface #66,  1           // InterfaceMethod getResourceType:()Lcom/inductiveautomation/ignition/common/resourcecollection/ResourceType;
+      15: invokevirtual #67                 // Method com/inductiveautomation/ignition/common/resourcecollection/ResourceType.typeId:()Ljava/lang/String;
+      18: ifnull        40
+      21: aload_0
+      22: invokeinterface #16,  1           // InterfaceMethod getResourcePath:()Lcom/inductiveautomation/ignition/common/resourcecollection/ResourcePath;
+      27: invokevirtual #25                 // Method com/inductiveautomation/ignition/common/resourcecollection/ResourcePath.getPath:()Lcom/inductiveautomation/ignition/common/StringPath$CaseSensitiveStringPath;
+      30: invokevirtual #72                 // Method com/inductiveautomation/ignition/common/StringPath$CaseSensitiveStringPath.isRoot:()Z
+      33: ifeq          40
+      36: iconst_1
+      37: goto          41
+      40: iconst_0
+      41: ireturn
+
+  public default boolean isSingletonResource();
+    Code:
+       0: aload_0
+       1: invokeinterface #62,  1           // InterfaceMethod isFolder:()Z
+       6: ifne          40
+       9: aload_0
+      10: invokeinterface #66,  1           // InterfaceMethod getResourceType:()Lcom/inductiveautomation/ignition/common/resourcecollection/ResourceType;
+      15: invokevirtual #67                 // Method com/inductiveautomation/ignition/common/resourcecollection/ResourceType.typeId:()Ljava/lang/String;
+      18: ifnull        40
+      21: aload_0
+      22: invokeinterface #16,  1           // InterfaceMethod getResourcePath:()Lcom/inductiveautomation/ignition/common/resourcecollection/ResourcePath;
+      27: invokevirtual #25                 // Method com/inductiveautomation/ignition/common/resourcecollection/ResourcePath.getPath:()Lcom/inductiveautomation/ignition/common/StringPath$CaseSensitiveStringPath;
+      30: invokevirtual #72                 // Method com/inductiveautomation/ignition/common/StringPath$CaseSensitiveStringPath.isRoot:()Z
+      33: ifeq          40
+      36: iconst_1
+      37: goto          41
+      40: iconst_0
+      41: ireturn
+
+  public abstract boolean isRestricted();
+
+  public abstract boolean isOverridable();
+
+  public abstract com.inductiveautomation.ignition.common.ImmutableBytes getContentDigest();
+
+  public abstract com.inductiveautomation.ignition.common.resourcecollection.ResourceSignature getResourceSignature();
+
+  public default com.inductiveautomation.ignition.common.resourcecollection.ResourceId getResourceId();
+    Code:
+       0: new           #75                 // class com/inductiveautomation/ignition/common/resourcecollection/ResourceId
+       3: dup
+       4: aload_0
+       5: invokeinterface #1,  1            // InterfaceMethod getCollectionName:()Ljava/lang/String;
+      10: aload_0
+      11: invokeinterface #16,  1           // InterfaceMethod getResourcePath:()Lcom/inductiveautomation/ignition/common/resourcecollection/ResourcePath;
+      16: invokespecial #77                 // Method com/inductiveautomation/ignition/common/resourcecollection/ResourceId."<init>":(Ljava/lang/String;Lcom/inductiveautomation/ignition/common/resourcecollection/ResourcePath;)V
+      19: areturn
+
+  public default com.inductiveautomation.ignition.common.resourcecollection.Resource copy();
+    Code:
+       0: aload_0
+       1: invokeinterface #81,  1           // InterfaceMethod toBuilder:()Lcom/inductiveautomation/ignition/common/resourcecollection/ResourceBuilder;
+       6: invokevirtual #85                 // Method com/inductiveautomation/ignition/common/resourcecollection/ResourceBuilder.build:()Lcom/inductiveautomation/ignition/common/resourcecollection/Resource;
+       9: areturn
+
+  public default com.inductiveautomation.ignition.common.resourcecollection.Resource copy(java.util.function.Consumer<com.inductiveautomation.ignition.common.resourcecollection.ResourceBuilder>);
+    Code:
+       0: aload_0
+       1: invokeinterface #81,  1           // InterfaceMethod toBuilder:()Lcom/inductiveautomation/ignition/common/resourcecollection/ResourceBuilder;
+       6: astore_2
+       7: aload_1
+       8: aload_2
+       9: invokeinterface #91,  2           // InterfaceMethod java/util/function/Consumer.accept:(Ljava/lang/Object;)V
+      14: aload_2
+      15: invokevirtual #85                 // Method com/inductiveautomation/ignition/common/resourcecollection/ResourceBuilder.build:()Lcom/inductiveautomation/ignition/common/resourcecollection/Resource;
+      18: areturn
+
+  public default com.inductiveautomation.ignition.common.resourcecollection.Resource copyWithAttribute(java.lang.String, com.inductiveautomation.ignition.common.gson.JsonElement);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: aload_2
+       3: invokedynamic #97,  0             // InvokeDynamic #0:accept:(Ljava/lang/String;Lcom/inductiveautomation/ignition/common/gson/JsonElement;)Ljava/util/function/Consumer;
+       8: invokeinterface #100,  2          // InterfaceMethod copy:(Ljava/util/function/Consumer;)Lcom/inductiveautomation/ignition/common/resourcecollection/Resource;
+      13: areturn
+
+  public default com.inductiveautomation.ignition.common.resourcecollection.ResourceBuilder toBuilder();
+    Code:
+       0: invokestatic  #104                // InterfaceMethod newBuilder:()Lcom/inductiveautomation/ignition/common/resourcecollection/ResourceBuilder;
+       3: aload_0
+       4: invokevirtual #107                // Method com/inductiveautomation/ignition/common/resourcecollection/ResourceBuilder.copyFrom:(Lcom/inductiveautomation/ignition/common/resourcecollection/Resource;)Lcom/inductiveautomation/ignition/common/resourcecollection/ResourceBuilder;
+       7: areturn
+
+  public static com.inductiveautomation.ignition.common.ImmutableBytes calculateContentDigest(com.inductiveautomation.ignition.common.resourcecollection.Resource);
+    Code:
+       0: aload_0
+       1: invokestatic  #111                // Method com/google/common/base/Predicates.alwaysTrue:()Lcom/google/common/base/Predicate;
+       4: invokestatic  #117                // InterfaceMethod calculateContentDigest:(Lcom/inductiveautomation/ignition/common/resourcecollection/Resource;Ljava/util/function/Predicate;)Lcom/inductiveautomation/ignition/common/ImmutableBytes;
+       7: areturn
+
+  public static com.inductiveautomation.ignition.common.ImmutableBytes calculateContentDigest(com.inductiveautomation.ignition.common.resourcecollection.Resource, java.util.function.Predicate<java.lang.String>);
+    Code:
+       0: invokestatic  #121                // Method com/inductiveautomation/ignition/common/util/DigestBuilder.sha256:()Lcom/inductiveautomation/ignition/common/util/DigestBuilder;
+       3: astore_2
+       4: aload_2
+       5: aload_0
+       6: invokeinterface #127,  1          // InterfaceMethod getApplicationScope:()I
+      11: invokevirtual #131                // Method com/inductiveautomation/ignition/common/util/DigestBuilder.update:(I)Lcom/inductiveautomation/ignition/common/util/DigestBuilder;
+      14: pop
+      15: aload_0
+      16: invokeinterface #135,  1          // InterfaceMethod getDocumentation:()Ljava/lang/String;
+      21: ifnull        35
+      24: aload_2
+      25: aload_0
+      26: invokeinterface #135,  1          // InterfaceMethod getDocumentation:()Ljava/lang/String;
+      31: invokevirtual #138                // Method com/inductiveautomation/ignition/common/util/DigestBuilder.update:(Ljava/lang/String;)Lcom/inductiveautomation/ignition/common/util/DigestBuilder;
+      34: pop
+      35: aload_2
+      36: aload_0
+      37: invokeinterface #141,  1          // InterfaceMethod getVersion:()I
+      42: invokevirtual #131                // Method com/inductiveautomation/ignition/common/util/DigestBuilder.update:(I)Lcom/inductiveautomation/ignition/common/util/DigestBuilder;
+      45: pop
+      46: aload_2
+      47: aload_0
+      48: invokeinterface #144,  1          // InterfaceMethod isUnary:()Z
+      53: invokevirtual #147                // Method com/inductiveautomation/ignition/common/util/DigestBuilder.update:(Z)Lcom/inductiveautomation/ignition/common/util/DigestBuilder;
+      56: pop
+      57: aload_2
+      58: aload_0
+      59: invokeinterface #150,  1          // InterfaceMethod isRestricted:()Z
+      64: invokevirtual #147                // Method com/inductiveautomation/ignition/common/util/DigestBuilder.update:(Z)Lcom/inductiveautomation/ignition/common/util/DigestBuilder;
+      67: pop
+      68: aload_2
+      69: aload_0
+      70: invokeinterface #153,  1          // InterfaceMethod isOverridable:()Z
+      75: invokevirtual #147                // Method com/inductiveautomation/ignition/common/util/DigestBuilder.update:(Z)Lcom/inductiveautomation/ignition/common/util/DigestBuilder;
+      78: pop
+      79: aload_0
+      80: invokeinterface #156,  1          // InterfaceMethod getDataKeys:()Lcom/google/common/collect/ImmutableSet;
+      85: invokevirtual #160                // Method com/google/common/collect/ImmutableSet.stream:()Ljava/util/stream/Stream;
+      88: invokeinterface #166,  1          // InterfaceMethod java/util/stream/Stream.sorted:()Ljava/util/stream/Stream;
+      93: aload_2
+      94: aload_0
+      95: invokedynamic #171,  0            // InvokeDynamic #1:accept:(Lcom/inductiveautomation/ignition/common/util/DigestBuilder;Lcom/inductiveautomation/ignition/common/resourcecollection/Resource;)Ljava/util/function/Consumer;
+     100: invokeinterface #174,  2          // InterfaceMethod java/util/stream/Stream.forEach:(Ljava/util/function/Consumer;)V
+     105: aload_0
+     106: invokeinterface #44,  1           // InterfaceMethod getAttributes:()Ljava/util/Map;
+     111: astore_3
+     112: aload_3
+     113: invokeinterface #178,  1          // InterfaceMethod java/util/Map.keySet:()Ljava/util/Set;
+     118: invokeinterface #182,  1          // InterfaceMethod java/util/Set.stream:()Ljava/util/stream/Stream;
+     123: aload_1
+     124: invokeinterface #185,  2          // InterfaceMethod java/util/stream/Stream.filter:(Ljava/util/function/Predicate;)Ljava/util/stream/Stream;
+     129: invokeinterface #166,  1          // InterfaceMethod java/util/stream/Stream.sorted:()Ljava/util/stream/Stream;
+     134: aload_2
+     135: aload_3
+     136: invokedynamic #189,  0            // InvokeDynamic #2:accept:(Lcom/inductiveautomation/ignition/common/util/DigestBuilder;Ljava/util/Map;)Ljava/util/function/Consumer;
+     141: invokeinterface #174,  2          // InterfaceMethod java/util/stream/Stream.forEach:(Ljava/util/function/Consumer;)V
+     146: aload_2
+     147: invokevirtual #192                // Method com/inductiveautomation/ignition/common/util/DigestBuilder.build:()[B
+     150: invokestatic  #195                // Method com/inductiveautomation/ignition/common/ImmutableBytes.copyOf:([B)Lcom/inductiveautomation/ignition/common/ImmutableBytes;
+     153: areturn
+
+  public static com.inductiveautomation.ignition.common.resourcecollection.ResourceBuilder newBuilder();
+    Code:
+       0: new           #86                 // class com/inductiveautomation/ignition/common/resourcecollection/ResourceBuilder
+       3: dup
+       4: invokespecial #201                // Method com/inductiveautomation/ignition/common/resourcecollection/ResourceBuilder."<init>":()V
+       7: areturn
+
+  private static void lambda$calculateContentDigest$2(com.inductiveautomation.ignition.common.util.DigestBuilder, java.util.Map, java.lang.String);
+    Code:
+       0: aload_0
+       1: aload_2
+       2: invokevirtual #138                // Method com/inductiveautomation/ignition/common/util/DigestBuilder.update:(Ljava/lang/String;)Lcom/inductiveautomation/ignition/common/util/DigestBuilder;
+       5: aload_1
+       6: aload_2
+       7: invokeinterface #48,  2           // InterfaceMethod java/util/Map.get:(Ljava/lang/Object;)Ljava/lang/Object;
+      12: checkcast     #54                 // class com/inductiveautomation/ignition/common/gson/JsonElement
+      15: invokevirtual #204                // Method com/inductiveautomation/ignition/common/gson/JsonElement.toString:()Ljava/lang/String;
+      18: invokevirtual #138                // Method com/inductiveautomation/ignition/common/util/DigestBuilder.update:(Ljava/lang/String;)Lcom/inductiveautomation/ignition/common/util/DigestBuilder;
+      21: pop
+      22: return
+
+  private static void lambda$calculateContentDigest$1(com.inductiveautomation.ignition.common.util.DigestBuilder, com.inductiveautomation.ignition.common.resourcecollection.Resource, java.lang.String);
+    Code:
+       0: aload_0
+       1: aload_2
+       2: invokevirtual #138                // Method com/inductiveautomation/ignition/common/util/DigestBuilder.update:(Ljava/lang/String;)Lcom/inductiveautomation/ignition/common/util/DigestBuilder;
+       5: aload_1
+       6: aload_2
+       7: invokeinterface #205,  2          // InterfaceMethod getDataDigest:(Ljava/lang/String;)Ljava/util/Optional;
+      12: ldc           #208                // String
+      14: invokevirtual #210                // Method java/util/Optional.orElse:(Ljava/lang/Object;)Ljava/lang/Object;
+      17: checkcast     #213                // class java/lang/String
+      20: invokevirtual #138                // Method com/inductiveautomation/ignition/common/util/DigestBuilder.update:(Ljava/lang/String;)Lcom/inductiveautomation/ignition/common/util/DigestBuilder;
+      23: pop
+      24: return
+
+  private static void lambda$copyWithAttribute$0(java.lang.String, com.inductiveautomation.ignition.common.gson.JsonElement, com.inductiveautomation.ignition.common.resourcecollection.ResourceBuilder);
+    Code:
+       0: aload_2
+       1: aload_0
+       2: aload_1
+       3: invokevirtual #215                // Method com/inductiveautomation/ignition/common/resourcecollection/ResourceBuilder.putAttribute:(Ljava/lang/String;Lcom/inductiveautomation/ignition/common/gson/JsonElement;)Lcom/inductiveautomation/ignition/common/resourcecollection/ResourceBuilder;
+       6: pop
+       7: return
+}
+Compiled from "ImmutableResource.java"
+public class com.inductiveautomation.ignition.common.resourcecollection.ImmutableResource extends com.inductiveautomation.ignition.common.resourcecollection.AbstractResource {
+  private final java.util.concurrent.atomic.AtomicReference<com.inductiveautomation.ignition.common.ImmutableBytes> digest;
+
+  private final java.util.concurrent.atomic.AtomicReference<com.inductiveautomation.ignition.common.resourcecollection.ResourceSignature> signature;
+
+  private final java.util.concurrent.atomic.AtomicReference<java.lang.Integer> hashCode;
+
+  private final com.google.common.collect.ImmutableMap<java.lang.String, com.inductiveautomation.ignition.common.ImmutableBytes> data;
+
+  com.inductiveautomation.ignition.common.resourcecollection.ImmutableResource(java.lang.String, com.inductiveautomation.ignition.common.resourcecollection.ResourcePath, int, java.lang.String, int, boolean, boolean, boolean, boolean, java.util.Map<java.lang.String, com.inductiveautomation.ignition.common.ImmutableBytes>, java.util.Map<java.lang.String, com.inductiveautomation.ignition.common.gson.JsonElement>);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: aload_2
+       3: iload_3
+       4: aload         4
+       6: iload         5
+       8: iload         6
+      10: iload         7
+      12: iload         8
+      14: iload         9
+      16: aload         11
+      18: invokespecial #1                  // Method com/inductiveautomation/ignition/common/resourcecollection/AbstractResource."<init>":(Ljava/lang/String;Lcom/inductiveautomation/ignition/common/resourcecollection/ResourcePath;ILjava/lang/String;IZZZZLjava/util/Map;)V
+      21: aload_0
+      22: new           #7                  // class java/util/concurrent/atomic/AtomicReference
+      25: dup
+      26: invokespecial #9                  // Method java/util/concurrent/atomic/AtomicReference."<init>":()V
+      29: putfield      #12                 // Field digest:Ljava/util/concurrent/atomic/AtomicReference;
+      32: aload_0
+      33: new           #7                  // class java/util/concurrent/atomic/AtomicReference
+      36: dup
+      37: invokespecial #9                  // Method java/util/concurrent/atomic/AtomicReference."<init>":()V
+      40: putfield      #18                 // Field signature:Ljava/util/concurrent/atomic/AtomicReference;
+      43: aload_0
+      44: new           #7                  // class java/util/concurrent/atomic/AtomicReference
+      47: dup
+      48: invokespecial #9                  // Method java/util/concurrent/atomic/AtomicReference."<init>":()V
+      51: putfield      #21                 // Field hashCode:Ljava/util/concurrent/atomic/AtomicReference;
+      54: aload_0
+      55: aload         10
+      57: invokestatic  #24                 // Method com/google/common/collect/ImmutableMap.copyOf:(Ljava/util/Map;)Lcom/google/common/collect/ImmutableMap;
+      60: putfield      #30                 // Field data:Lcom/google/common/collect/ImmutableMap;
+      63: return
+
+  public java.util.Optional<com.inductiveautomation.ignition.common.ImmutableBytes> getData(java.lang.String);
+    Code:
+       0: aload_0
+       1: getfield      #30                 // Field data:Lcom/google/common/collect/ImmutableMap;
+       4: aload_1
+       5: invokevirtual #34                 // Method com/google/common/collect/ImmutableMap.get:(Ljava/lang/Object;)Ljava/lang/Object;
+       8: checkcast     #38                 // class com/inductiveautomation/ignition/common/ImmutableBytes
+      11: invokestatic  #40                 // Method java/util/Optional.ofNullable:(Ljava/lang/Object;)Ljava/util/Optional;
+      14: areturn
+
+  public java.util.Optional<java.io.InputStream> getDataStream(java.lang.String);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokevirtual #46                 // Method getData:(Ljava/lang/String;)Ljava/util/Optional;
+       5: invokedynamic #50,  0             // InvokeDynamic #0:apply:()Ljava/util/function/Function;
+      10: invokevirtual #54                 // Method java/util/Optional.map:(Ljava/util/function/Function;)Ljava/util/Optional;
+      13: areturn
+
+  public java.util.Optional<java.io.Reader> getDataReader(java.lang.String);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokevirtual #46                 // Method getData:(Ljava/lang/String;)Ljava/util/Optional;
+       5: invokedynamic #58,  0             // InvokeDynamic #1:apply:()Ljava/util/function/Function;
+      10: invokevirtual #54                 // Method java/util/Optional.map:(Ljava/util/function/Function;)Ljava/util/Optional;
+      13: areturn
+
+  public java.util.Optional<java.lang.String> getDataDigest(java.lang.String);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokevirtual #46                 // Method getData:(Ljava/lang/String;)Ljava/util/Optional;
+       5: invokedynamic #59,  0             // InvokeDynamic #2:apply:()Ljava/util/function/Function;
+      10: invokevirtual #54                 // Method java/util/Optional.map:(Ljava/util/function/Function;)Ljava/util/Optional;
+      13: areturn
+
+  public com.google.common.collect.ImmutableSet<java.lang.String> getDataKeys();
+    Code:
+       0: aload_0
+       1: getfield      #30                 // Field data:Lcom/google/common/collect/ImmutableMap;
+       4: invokevirtual #60                 // Method com/google/common/collect/ImmutableMap.keySet:()Lcom/google/common/collect/ImmutableSet;
+       7: invokestatic  #64                 // Method com/google/common/collect/ImmutableSet.copyOf:(Ljava/util/Collection;)Lcom/google/common/collect/ImmutableSet;
+      10: areturn
+
+  public com.inductiveautomation.ignition.common.ImmutableBytes getContentDigest();
+    Code:
+       0: aload_0
+       1: getfield      #12                 // Field digest:Ljava/util/concurrent/atomic/AtomicReference;
+       4: aload_0
+       5: invokedynamic #69,  0             // InvokeDynamic #3:apply:(Lcom/inductiveautomation/ignition/common/resourcecollection/ImmutableResource;)Ljava/util/function/UnaryOperator;
+      10: invokevirtual #72                 // Method java/util/concurrent/atomic/AtomicReference.updateAndGet:(Ljava/util/function/UnaryOperator;)Ljava/lang/Object;
+      13: checkcast     #38                 // class com/inductiveautomation/ignition/common/ImmutableBytes
+      16: areturn
+
+  public com.inductiveautomation.ignition.common.resourcecollection.ResourceSignature getResourceSignature();
+    Code:
+       0: aload_0
+       1: getfield      #18                 // Field signature:Ljava/util/concurrent/atomic/AtomicReference;
+       4: aload_0
+       5: invokedynamic #76,  0             // InvokeDynamic #4:apply:(Lcom/inductiveautomation/ignition/common/resourcecollection/ImmutableResource;)Ljava/util/function/UnaryOperator;
+      10: invokevirtual #72                 // Method java/util/concurrent/atomic/AtomicReference.updateAndGet:(Ljava/util/function/UnaryOperator;)Ljava/lang/Object;
+      13: checkcast     #77                 // class com/inductiveautomation/ignition/common/resourcecollection/ResourceSignature
+      16: areturn
+
+  public boolean equals(java.lang.Object);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: if_acmpne     7
+       5: iconst_1
+       6: ireturn
+       7: aload_1
+       8: ifnull        22
+      11: aload_0
+      12: invokevirtual #79                 // Method java/lang/Object.getClass:()Ljava/lang/Class;
+      15: aload_1
+      16: invokevirtual #79                 // Method java/lang/Object.getClass:()Ljava/lang/Class;
+      19: if_acmpeq     24
+      22: iconst_0
+      23: ireturn
+      24: aload_1
+      25: checkcast     #13                 // class com/inductiveautomation/ignition/common/resourcecollection/ImmutableResource
+      28: astore_2
+      29: aload_0
+      30: getfield      #30                 // Field data:Lcom/google/common/collect/ImmutableMap;
+      33: invokevirtual #85                 // Method com/google/common/collect/ImmutableMap.size:()I
+      36: aload_2
+      37: getfield      #30                 // Field data:Lcom/google/common/collect/ImmutableMap;
+      40: invokevirtual #85                 // Method com/google/common/collect/ImmutableMap.size:()I
+      43: if_icmpeq     48
+      46: iconst_0
+      47: ireturn
+      48: aload_0
+      49: getfield      #30                 // Field data:Lcom/google/common/collect/ImmutableMap;
+      52: invokevirtual #89                 // Method com/google/common/collect/ImmutableMap.entrySet:()Lcom/google/common/collect/ImmutableSet;
+      55: invokevirtual #92                 // Method com/google/common/collect/ImmutableSet.iterator:()Lcom/google/common/collect/UnmodifiableIterator;
+      58: astore_3
+      59: aload_3
+      60: invokeinterface #96,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+      65: ifeq          146
+      68: aload_3
+      69: invokeinterface #102,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      74: checkcast     #106                // class java/util/Map$Entry
+      77: astore        4
+      79: aload         4
+      81: invokeinterface #108,  1          // InterfaceMethod java/util/Map$Entry.getKey:()Ljava/lang/Object;
+      86: checkcast     #111                // class java/lang/String
+      89: astore        5
+      91: aload         4
+      93: invokeinterface #113,  1          // InterfaceMethod java/util/Map$Entry.getValue:()Ljava/lang/Object;
+      98: checkcast     #38                 // class com/inductiveautomation/ignition/common/ImmutableBytes
+     101: astore        6
+     103: aload_2
+     104: getfield      #30                 // Field data:Lcom/google/common/collect/ImmutableMap;
+     107: aload         5
+     109: invokevirtual #116                // Method com/google/common/collect/ImmutableMap.containsKey:(Ljava/lang/Object;)Z
+     112: ifne          117
+     115: iconst_0
+     116: ireturn
+     117: aload_2
+     118: getfield      #30                 // Field data:Lcom/google/common/collect/ImmutableMap;
+     121: aload         5
+     123: invokevirtual #34                 // Method com/google/common/collect/ImmutableMap.get:(Ljava/lang/Object;)Ljava/lang/Object;
+     126: checkcast     #38                 // class com/inductiveautomation/ignition/common/ImmutableBytes
+     129: astore        7
+     131: aload         6
+     133: aload         7
+     135: invokestatic  #120                // Method java/util/Objects.equals:(Ljava/lang/Object;Ljava/lang/Object;)Z
+     138: ifne          143
+     141: iconst_0
+     142: ireturn
+     143: goto          59
+     146: aload_0
+     147: getfield      #126                // Field folder:Z
+     150: aload_2
+     151: getfield      #126                // Field folder:Z
+     154: if_icmpne     272
+     157: aload_0
+     158: getfield      #130                // Field applicationScope:I
+     161: aload_2
+     162: getfield      #130                // Field applicationScope:I
+     165: if_icmpne     272
+     168: aload_0
+     169: getfield      #134                // Field version:I
+     172: aload_2
+     173: getfield      #134                // Field version:I
+     176: if_icmpne     272
+     179: aload_0
+     180: getfield      #137                // Field restricted:Z
+     183: aload_2
+     184: getfield      #137                // Field restricted:Z
+     187: if_icmpne     272
+     190: aload_0
+     191: getfield      #140                // Field overridable:Z
+     194: aload_2
+     195: getfield      #140                // Field overridable:Z
+     198: if_icmpne     272
+     201: aload_0
+     202: getfield      #143                // Field unary:Z
+     205: aload_2
+     206: getfield      #143                // Field unary:Z
+     209: if_icmpne     272
+     212: aload_0
+     213: getfield      #146                // Field collectionName:Ljava/lang/String;
+     216: aload_2
+     217: getfield      #146                // Field collectionName:Ljava/lang/String;
+     220: invokevirtual #150                // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+     223: ifeq          272
+     226: aload_0
+     227: getfield      #152                // Field resourcePath:Lcom/inductiveautomation/ignition/common/resourcecollection/ResourcePath;
+     230: aload_2
+     231: getfield      #152                // Field resourcePath:Lcom/inductiveautomation/ignition/common/resourcecollection/ResourcePath;
+     234: invokevirtual #156                // Method com/inductiveautomation/ignition/common/resourcecollection/ResourcePath.equals:(Ljava/lang/Object;)Z
+     237: ifeq          272
+     240: aload_0
+     241: getfield      #159                // Field documentation:Ljava/lang/String;
+     244: aload_2
+     245: getfield      #159                // Field documentation:Ljava/lang/String;
+     248: invokestatic  #120                // Method java/util/Objects.equals:(Ljava/lang/Object;Ljava/lang/Object;)Z
+     251: ifeq          272
+     254: aload_0
+     255: getfield      #162                // Field attributes:Lcom/google/common/collect/ImmutableMap;
+     258: aload_2
+     259: getfield      #162                // Field attributes:Lcom/google/common/collect/ImmutableMap;
+     262: invokevirtual #165                // Method com/google/common/collect/ImmutableMap.equals:(Ljava/lang/Object;)Z
+     265: ifeq          272
+     268: iconst_1
+     269: goto          273
+     272: iconst_0
+     273: ireturn
+
+  public int hashCode();
+    Code:
+       0: aload_0
+       1: getfield      #21                 // Field hashCode:Ljava/util/concurrent/atomic/AtomicReference;
+       4: aload_0
+       5: invokedynamic #166,  0            // InvokeDynamic #5:apply:(Lcom/inductiveautomation/ignition/common/resourcecollection/ImmutableResource;)Ljava/util/function/UnaryOperator;
+      10: invokevirtual #72                 // Method java/util/concurrent/atomic/AtomicReference.updateAndGet:(Ljava/util/function/UnaryOperator;)Ljava/lang/Object;
+      13: checkcast     #167                // class java/lang/Integer
+      16: invokevirtual #169                // Method java/lang/Integer.intValue:()I
+      19: ireturn
+
+  private java.lang.Integer lambda$hashCode$6(java.lang.Integer);
+    Code:
+       0: aload_1
+       1: aload_0
+       2: invokedynamic #172,  0            // InvokeDynamic #6:get:(Lcom/inductiveautomation/ignition/common/resourcecollection/ImmutableResource;)Ljava/util/function/Supplier;
+       7: invokestatic  #175                // Method java/util/Objects.requireNonNullElseGet:(Ljava/lang/Object;Ljava/util/function/Supplier;)Ljava/lang/Object;
+      10: checkcast     #167                // class java/lang/Integer
+      13: areturn
+
+  private java.lang.Integer lambda$hashCode$5();
+    Code:
+       0: bipush        12
+       2: anewarray     #80                 // class java/lang/Object
+       5: dup
+       6: iconst_0
+       7: aload_0
+       8: getfield      #146                // Field collectionName:Ljava/lang/String;
+      11: aastore
+      12: dup
+      13: iconst_1
+      14: aload_0
+      15: getfield      #152                // Field resourcePath:Lcom/inductiveautomation/ignition/common/resourcecollection/ResourcePath;
+      18: aastore
+      19: dup
+      20: iconst_2
+      21: aload_0
+      22: getfield      #126                // Field folder:Z
+      25: invokestatic  #179                // Method java/lang/Boolean.valueOf:(Z)Ljava/lang/Boolean;
+      28: aastore
+      29: dup
+      30: iconst_3
+      31: aload_0
+      32: getfield      #159                // Field documentation:Ljava/lang/String;
+      35: aastore
+      36: dup
+      37: iconst_4
+      38: iconst_1
+      39: anewarray     #80                 // class java/lang/Object
+      42: dup
+      43: iconst_0
+      44: aload_0
+      45: getfield      #30                 // Field data:Lcom/google/common/collect/ImmutableMap;
+      48: invokevirtual #60                 // Method com/google/common/collect/ImmutableMap.keySet:()Lcom/google/common/collect/ImmutableSet;
+      51: aastore
+      52: invokestatic  #185                // Method java/util/Objects.hash:([Ljava/lang/Object;)I
+      55: invokestatic  #189                // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+      58: aastore
+      59: dup
+      60: iconst_5
+      61: aload_0
+      62: getfield      #30                 // Field data:Lcom/google/common/collect/ImmutableMap;
+      65: invokevirtual #192                // Method com/google/common/collect/ImmutableMap.values:()Lcom/google/common/collect/ImmutableCollection;
+      68: invokevirtual #196                // Method com/google/common/collect/ImmutableCollection.toArray:()[Ljava/lang/Object;
+      71: invokestatic  #202                // Method java/util/Arrays.deepHashCode:([Ljava/lang/Object;)I
+      74: invokestatic  #189                // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+      77: aastore
+      78: dup
+      79: bipush        6
+      81: aload_0
+      82: getfield      #162                // Field attributes:Lcom/google/common/collect/ImmutableMap;
+      85: aastore
+      86: dup
+      87: bipush        7
+      89: aload_0
+      90: getfield      #130                // Field applicationScope:I
+      93: invokestatic  #189                // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+      96: aastore
+      97: dup
+      98: bipush        8
+     100: aload_0
+     101: getfield      #134                // Field version:I
+     104: invokestatic  #189                // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+     107: aastore
+     108: dup
+     109: bipush        9
+     111: aload_0
+     112: getfield      #137                // Field restricted:Z
+     115: invokestatic  #179                // Method java/lang/Boolean.valueOf:(Z)Ljava/lang/Boolean;
+     118: aastore
+     119: dup
+     120: bipush        10
+     122: aload_0
+     123: getfield      #140                // Field overridable:Z
+     126: invokestatic  #179                // Method java/lang/Boolean.valueOf:(Z)Ljava/lang/Boolean;
+     129: aastore
+     130: dup
+     131: bipush        11
+     133: aload_0
+     134: getfield      #143                // Field unary:Z
+     137: invokestatic  #179                // Method java/lang/Boolean.valueOf:(Z)Ljava/lang/Boolean;
+     140: aastore
+     141: invokestatic  #185                // Method java/util/Objects.hash:([Ljava/lang/Object;)I
+     144: invokestatic  #189                // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+     147: areturn
+
+  private com.inductiveautomation.ignition.common.resourcecollection.ResourceSignature lambda$getResourceSignature$4(com.inductiveautomation.ignition.common.resourcecollection.ResourceSignature);
+    Code:
+       0: aload_1
+       1: aload_0
+       2: invokedynamic #207,  0            // InvokeDynamic #7:get:(Lcom/inductiveautomation/ignition/common/resourcecollection/ImmutableResource;)Ljava/util/function/Supplier;
+       7: invokestatic  #175                // Method java/util/Objects.requireNonNullElseGet:(Ljava/lang/Object;Ljava/util/function/Supplier;)Ljava/lang/Object;
+      10: checkcast     #77                 // class com/inductiveautomation/ignition/common/resourcecollection/ResourceSignature
+      13: areturn
+
+  private com.inductiveautomation.ignition.common.resourcecollection.ResourceSignature lambda$getResourceSignature$3();
+    Code:
+       0: new           #77                 // class com/inductiveautomation/ignition/common/resourcecollection/ResourceSignature
+       3: dup
+       4: aload_0
+       5: invokevirtual #208                // Method getResourceId:()Lcom/inductiveautomation/ignition/common/resourcecollection/ResourceId;
+       8: aload_0
+       9: invokevirtual #212                // Method getContentDigest:()Lcom/inductiveautomation/ignition/common/ImmutableBytes;
+      12: invokespecial #216                // Method com/inductiveautomation/ignition/common/resourcecollection/ResourceSignature."<init>":(Lcom/inductiveautomation/ignition/common/resourcecollection/ResourceId;Lcom/inductiveautomation/ignition/common/ImmutableBytes;)V
+      15: areturn
+
+  private com.inductiveautomation.ignition.common.ImmutableBytes lambda$getContentDigest$2(com.inductiveautomation.ignition.common.ImmutableBytes);
+    Code:
+       0: aload_1
+       1: aload_0
+       2: invokedynamic #219,  0            // InvokeDynamic #8:get:(Lcom/inductiveautomation/ignition/common/resourcecollection/ImmutableResource;)Ljava/util/function/Supplier;
+       7: invokestatic  #175                // Method java/util/Objects.requireNonNullElseGet:(Ljava/lang/Object;Ljava/util/function/Supplier;)Ljava/lang/Object;
+      10: checkcast     #38                 // class com/inductiveautomation/ignition/common/ImmutableBytes
+      13: areturn
+
+  private com.inductiveautomation.ignition.common.ImmutableBytes lambda$getContentDigest$1();
+    Code:
+       0: aload_0
+       1: invokestatic  #220                // InterfaceMethod com/inductiveautomation/ignition/common/resourcecollection/Resource.calculateContentDigest:(Lcom/inductiveautomation/ignition/common/resourcecollection/Resource;)Lcom/inductiveautomation/ignition/common/ImmutableBytes;
+       4: areturn
+
+  private static java.lang.String lambda$getDataDigest$0(com.inductiveautomation.ignition.common.ImmutableBytes);
+    Code:
+       0: invokestatic  #226                // Method com/inductiveautomation/ignition/common/util/DigestBuilder.sha256:()Lcom/inductiveautomation/ignition/common/util/DigestBuilder;
+       3: aload_0
+       4: invokevirtual #232                // Method com/inductiveautomation/ignition/common/util/DigestBuilder.update:(Lcom/inductiveautomation/ignition/common/ImmutableBytes;)Lcom/inductiveautomation/ignition/common/util/DigestBuilder;
+       7: invokevirtual #236                // Method com/inductiveautomation/ignition/common/util/DigestBuilder.buildHexString:()Ljava/lang/String;
+      10: areturn
+}
+Compiled from "AbstractResource.java"
+public abstract class com.inductiveautomation.ignition.common.resourcecollection.AbstractResource implements com.inductiveautomation.ignition.common.resourcecollection.Resource {
+  protected final java.lang.String collectionName;
+
+  protected final com.inductiveautomation.ignition.common.resourcecollection.ResourcePath resourcePath;
+
+  protected final boolean folder;
+
+  protected final boolean unary;
+
+  protected final java.lang.String documentation;
+
+  protected final com.google.common.collect.ImmutableMap<java.lang.String, com.inductiveautomation.ignition.common.gson.JsonElement> attributes;
+
+  protected final int applicationScope;
+
+  protected final int version;
+
+  protected final boolean restricted;
+
+  protected final boolean overridable;
+
+  protected com.inductiveautomation.ignition.common.resourcecollection.AbstractResource(java.lang.String, com.inductiveautomation.ignition.common.resourcecollection.ResourcePath, int, java.lang.String, int, boolean, boolean, boolean, boolean, java.util.Map<java.lang.String, com.inductiveautomation.ignition.common.gson.JsonElement>);
+    Code:
+       0: aload_0
+       1: invokespecial #1                  // Method java/lang/Object."<init>":()V
+       4: aload_2
+       5: invokevirtual #7                  // Method com/inductiveautomation/ignition/common/resourcecollection/ResourcePath.isModuleFolder:()Z
+       8: ifeq          18
+      11: iload         6
+      13: ldc           #13                 // String module folder must have folder flag set
+      15: invokestatic  #15                 // Method com/google/common/base/Preconditions.checkArgument:(ZLjava/lang/Object;)V
+      18: aload_0
+      19: aload_1
+      20: putfield      #21                 // Field collectionName:Ljava/lang/String;
+      23: aload_0
+      24: aload_2
+      25: putfield      #27                 // Field resourcePath:Lcom/inductiveautomation/ignition/common/resourcecollection/ResourcePath;
+      28: aload_0
+      29: aload         4
+      31: putfield      #31                 // Field documentation:Ljava/lang/String;
+      34: aload_0
+      35: iload         6
+      37: ifeq          45
+      40: bipush        7
+      42: goto          46
+      45: iload_3
+      46: putfield      #36                 // Field applicationScope:I
+      49: aload_0
+      50: iload         8
+      52: putfield      #40                 // Field restricted:Z
+      55: aload_0
+      56: iload         9
+      58: putfield      #44                 // Field overridable:Z
+      61: aload_0
+      62: iload         6
+      64: putfield      #47                 // Field folder:Z
+      67: aload_0
+      68: iload         7
+      70: putfield      #50                 // Field unary:Z
+      73: aload_0
+      74: aload         10
+      76: invokestatic  #53                 // Method com/google/common/collect/ImmutableMap.copyOf:(Ljava/util/Map;)Lcom/google/common/collect/ImmutableMap;
+      79: putfield      #59                 // Field attributes:Lcom/google/common/collect/ImmutableMap;
+      82: aload_0
+      83: iload         5
+      85: putfield      #63                 // Field version:I
+      88: return
+
+  public java.lang.String getCollectionName();
+    Code:
+       0: aload_0
+       1: getfield      #21                 // Field collectionName:Ljava/lang/String;
+       4: areturn
+
+  public com.inductiveautomation.ignition.common.resourcecollection.ResourcePath getResourcePath();
+    Code:
+       0: aload_0
+       1: getfield      #27                 // Field resourcePath:Lcom/inductiveautomation/ignition/common/resourcecollection/ResourcePath;
+       4: areturn
+
+  public int getApplicationScope();
+    Code:
+       0: aload_0
+       1: getfield      #36                 // Field applicationScope:I
+       4: ireturn
+
+  public java.lang.String getDocumentation();
+    Code:
+       0: aload_0
+       1: getfield      #31                 // Field documentation:Ljava/lang/String;
+       4: areturn
+
+  public int getVersion();
+    Code:
+       0: aload_0
+       1: getfield      #63                 // Field version:I
+       4: ireturn
+
+  public boolean isFolder();
+    Code:
+       0: aload_0
+       1: getfield      #47                 // Field folder:Z
+       4: ireturn
+
+  public boolean isUnary();
+    Code:
+       0: aload_0
+       1: getfield      #50                 // Field unary:Z
+       4: ireturn
+
+  public boolean isRestricted();
+    Code:
+       0: aload_0
+       1: getfield      #40                 // Field restricted:Z
+       4: ireturn
+
+  public boolean isOverridable();
+    Code:
+       0: aload_0
+       1: getfield      #44                 // Field overridable:Z
+       4: ireturn
+
+  public com.google.common.collect.ImmutableMap<java.lang.String, com.inductiveautomation.ignition.common.gson.JsonElement> getAttributes();
+    Code:
+       0: invokestatic  #66                 // Method com/google/common/collect/ImmutableMap.builder:()Lcom/google/common/collect/ImmutableMap$Builder;
+       3: astore_1
+       4: aload_0
+       5: getfield      #59                 // Field attributes:Lcom/google/common/collect/ImmutableMap;
+       8: aload_1
+       9: invokedynamic #70,  0             // InvokeDynamic #0:accept:(Lcom/google/common/collect/ImmutableMap$Builder;)Ljava/util/function/BiConsumer;
+      14: invokevirtual #74                 // Method com/google/common/collect/ImmutableMap.forEach:(Ljava/util/function/BiConsumer;)V
+      17: aload_1
+      18: invokevirtual #78                 // Method com/google/common/collect/ImmutableMap$Builder.build:()Lcom/google/common/collect/ImmutableMap;
+      21: areturn
+
+  public java.util.Optional<com.inductiveautomation.ignition.common.gson.JsonElement> getAttribute(java.lang.String);
+    Code:
+       0: aload_0
+       1: getfield      #59                 // Field attributes:Lcom/google/common/collect/ImmutableMap;
+       4: aload_1
+       5: invokevirtual #84                 // Method com/google/common/collect/ImmutableMap.get:(Ljava/lang/Object;)Ljava/lang/Object;
+       8: checkcast     #88                 // class com/inductiveautomation/ignition/common/gson/JsonElement
+      11: invokestatic  #90                 // Method java/util/Optional.ofNullable:(Ljava/lang/Object;)Ljava/util/Optional;
+      14: invokedynamic #96,  0             // InvokeDynamic #1:apply:()Ljava/util/function/Function;
+      19: invokevirtual #100                // Method java/util/Optional.map:(Ljava/util/function/Function;)Ljava/util/Optional;
+      22: areturn
+
+  public com.inductiveautomation.ignition.common.resourcecollection.ResourceId getResourceId();
+    Code:
+       0: new           #104                // class com/inductiveautomation/ignition/common/resourcecollection/ResourceId
+       3: dup
+       4: aload_0
+       5: getfield      #21                 // Field collectionName:Ljava/lang/String;
+       8: aload_0
+       9: getfield      #27                 // Field resourcePath:Lcom/inductiveautomation/ignition/common/resourcecollection/ResourcePath;
+      12: invokespecial #106                // Method com/inductiveautomation/ignition/common/resourcecollection/ResourceId."<init>":(Ljava/lang/String;Lcom/inductiveautomation/ignition/common/resourcecollection/ResourcePath;)V
+      15: areturn
+
+  public java.lang.String toString();
+    Code:
+       0: ldc           #109                // String %s/%s
+       2: iconst_2
+       3: anewarray     #2                  // class java/lang/Object
+       6: dup
+       7: iconst_0
+       8: aload_0
+       9: getfield      #21                 // Field collectionName:Ljava/lang/String;
+      12: aastore
+      13: dup
+      14: iconst_1
+      15: aload_0
+      16: getfield      #27                 // Field resourcePath:Lcom/inductiveautomation/ignition/common/resourcecollection/ResourcePath;
+      19: aastore
+      20: invokestatic  #111                // Method java/lang/String.format:(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+      23: areturn
+
+  public java.util.Map getAttributes();
+    Code:
+       0: aload_0
+       1: invokevirtual #117                // Method getAttributes:()Lcom/google/common/collect/ImmutableMap;
+       4: areturn
+
+  private static void lambda$getAttributes$0(com.google.common.collect.ImmutableMap$Builder, java.lang.String, com.inductiveautomation.ignition.common.gson.JsonElement);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: aload_2
+       3: invokevirtual #120                // Method com/inductiveautomation/ignition/common/gson/JsonElement.deepCopy:()Lcom/inductiveautomation/ignition/common/gson/JsonElement;
+       6: invokevirtual #124                // Method com/google/common/collect/ImmutableMap$Builder.put:(Ljava/lang/Object;Ljava/lang/Object;)Lcom/google/common/collect/ImmutableMap$Builder;
+       9: pop
+      10: return
+}
