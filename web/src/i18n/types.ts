@@ -53,6 +53,7 @@ export interface Translations {
     brand: string;
     brandShort: string;
     closeNavigation: string;
+    closeModelTools: string;
     footer: {
       org: string;
     };
@@ -67,17 +68,24 @@ export interface Translations {
     };
     nav: {
       analytics: string;
+      chat: string;
       config: string;
       cron: string;
       documentation: string;
       keys: string;
       logs: string;
+      models: string;
+      profiles: string;
+      plugins: string;
       sessions: string;
       skills: string;
     };
+    modelToolsSheetSubtitle: string;
+    modelToolsSheetTitle: string;
     navigation: string;
     openDocumentation: string;
     openNavigation: string;
+    pluginNavSection: string;
     sessionsActiveCount: string;
     statusOverview: string;
     system: string;
@@ -132,6 +140,7 @@ export interface Translations {
     confirmDeleteMessage: string;
     sessionDeleted: string;
     failedToDelete: string;
+    resumeInChat: string;
     previousPage: string;
     nextPage: string;
     roles: {
@@ -167,6 +176,19 @@ export interface Translations {
     perDayAvg: string;
     acrossModels: string;
     inOut: string;
+  };
+
+  // ── Models page ──
+  models: {
+    modelsUsed: string;
+    estimatedCost: string;
+    tokens: string;
+    sessions: string;
+    avgPerSession: string;
+    apiCalls: string;
+    toolCalls: string;
+    noModelsData: string;
+    startSession: string;
   };
 
   // ── Logs page ──
@@ -208,6 +230,77 @@ export interface Translations {
     };
   };
 
+  // ── Plugins page ──
+  pluginsPage: {
+    contextEngineLabel: string;
+    dashboardSlots: string;
+    disableRuntime: string;
+    enableAfterInstall: string;
+    enableRuntime: string;
+    forceReinstall: string;
+    headline: string;
+    identifierLabel: string;
+    inactive: string;
+    installBtn: string;
+    installHeading: string;
+    installHint: string;
+    memoryProviderLabel: string;
+    missingEnvWarn: string;
+    noDashboardTab: string;
+    openTab: string;
+    orphanHeading: string;
+    pluginListHeading: string;
+    providerDefaults: string;
+    providersHeading: string;
+    providersHint: string;
+    refreshDashboard: string;
+    removeConfirm: string;
+    removeHint: string;
+    rescanHeading: string;
+    rescanHint: string;
+    runtimeHeading: string;
+    saveProviders: string;
+    savedProviders: string;
+    sourceBadge: string;
+    authRequired: string;
+    authRequiredHint: string;
+    updateGit: string;
+    versionBadge: string;
+    showInSidebar: string;
+    hideFromSidebar: string;
+  };
+
+  // ── Profiles page ──
+  profiles: {
+    newProfile: string;
+    name: string;
+    namePlaceholder: string;
+    nameRequired: string;
+    nameRule: string;
+    invalidName: string;
+    cloneFromDefault: string;
+    allProfiles: string;
+    noProfiles: string;
+    defaultBadge: string;
+    hasEnv: string;
+    model: string;
+    skills: string;
+    rename: string;
+    editSoul: string;
+    soulSection: string;
+    soulPlaceholder: string;
+    saveSoul: string;
+    soulSaved: string;
+    openInTerminal: string;
+    commandCopied: string;
+    copyFailed: string;
+    confirmDeleteTitle: string;
+    confirmDeleteMessage: string;
+    created: string;
+    deleted: string;
+    renamed: string;
+  };
+
   // ── Skills page ──
   skills: {
     title: string;
@@ -237,6 +330,9 @@ export interface Translations {
     exportConfig: string;
     importConfig: string;
     resetDefaults: string;
+    resetScopeTooltip: string;
+    confirmResetScope: string;
+    resetScopeToast: string;
     rawYaml: string;
     searchResults: string;
     fields: string;
