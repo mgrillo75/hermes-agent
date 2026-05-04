@@ -226,7 +226,7 @@ def test_conflicting_systemd_units_warning(monkeypatch, tmp_path, capsys):
 
 def test_install_linux_gateway_from_setup_system_choice_without_root_prints_followup(monkeypatch, capsys):
     monkeypatch.setattr(gateway, "prompt_linux_gateway_install_scope", lambda: "system")
-    monkeypatch.setattr(gateway.os, "geteuid", lambda: 1000)
+    monkeypatch.setattr(gateway.os, "geteuid", lambda: 1000, raising=False)
     monkeypatch.setattr(gateway, "_default_system_service_user", lambda: "alice")
     monkeypatch.setattr(gateway, "systemd_install", lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("should not install")))
 
@@ -240,7 +240,7 @@ def test_install_linux_gateway_from_setup_system_choice_without_root_prints_foll
 
 def test_install_linux_gateway_from_setup_system_choice_as_root_installs(monkeypatch):
     monkeypatch.setattr(gateway, "prompt_linux_gateway_install_scope", lambda: "system")
-    monkeypatch.setattr(gateway.os, "geteuid", lambda: 0)
+    monkeypatch.setattr(gateway.os, "geteuid", lambda: 0, raising=False)
     monkeypatch.setattr(gateway, "_default_system_service_user", lambda: "alice")
 
     calls = []
@@ -361,7 +361,6 @@ class TestWaitForGatewayExit:
         assert calls == [(11, True), (22, True)]
 
 
-<<<<<<< HEAD
 class TestWindowsGatewayDiscovery:
     def test_find_gateway_pids_uses_pid_file_when_windows_command_line_is_blank(self, monkeypatch, tmp_path):
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
@@ -405,9 +404,15 @@ class TestWindowsGatewayDiscovery:
     def test_gateway_status_prefers_current_profile_pid(self, monkeypatch, capsys):
         monkeypatch.setattr(gateway, "supports_systemd_services", lambda: False)
         monkeypatch.setattr(gateway, "is_macos", lambda: False)
-        monkeypatch.setattr(gateway, "find_gateway_pids", lambda exclude_pids=None, all_profiles=False: [99999])
+        monkeypatch.setattr(
+            gateway,
+            "get_gateway_runtime_snapshot",
+            lambda system=False: gateway.GatewayRuntimeSnapshot(
+                manager="manual process",
+                gateway_pids=(4124,),
+            ),
+        )
         monkeypatch.setattr(gateway, "_runtime_health_lines", lambda: [])
-        monkeypatch.setattr("gateway.status.get_running_pid", lambda: 4124)
 
         gateway.gateway_command(SimpleNamespace(gateway_command="status", deep=False, system=False))
 
@@ -417,9 +422,13 @@ class TestWindowsGatewayDiscovery:
 
     def test_stop_profile_gateway_uses_terminate_pid(self, monkeypatch):
         calls = []
+        state = {"running": True}
 
-        monkeypatch.setattr("gateway.status.get_running_pid", lambda: 4124)
-        monkeypatch.setattr("gateway.status.pid_is_running", lambda pid: False)
+        monkeypatch.setattr("gateway.status.get_running_pid", lambda: 4124 if state["running"] else None)
+        monkeypatch.setattr(
+            "gateway.status.pid_is_running",
+            lambda pid: state.__setitem__("running", False) or False,
+        )
         monkeypatch.setattr("gateway.status.remove_pid_file", lambda: calls.append(("cleanup", None)))
         monkeypatch.setattr("gateway.status.terminate_pid", lambda pid, force=False: calls.append((pid, force)))
 
@@ -439,17 +448,18 @@ class TestWindowsGatewayDiscovery:
         assert gateway.stop_profile_gateway() is False
         out = capsys.readouterr().out
         assert "Failed to kill PID 4124" in out
-=======
+
+
 class TestStopProfileGateway:
     def test_stop_profile_gateway_keeps_pid_file_when_process_still_running(self, monkeypatch):
         calls = {"kill": 0, "remove": 0}
 
         monkeypatch.setattr("gateway.status.get_running_pid", lambda: 12345)
         monkeypatch.setattr(
-            gateway.os,
-            "kill",
-            lambda pid, sig: calls.__setitem__("kill", calls["kill"] + 1),
+            "gateway.status.terminate_pid",
+            lambda pid, force=False: calls.__setitem__("kill", calls["kill"] + 1),
         )
+        monkeypatch.setattr("gateway.status.pid_is_running", lambda pid: True)
         monkeypatch.setattr("time.sleep", lambda _: None)
         monkeypatch.setattr(
             "gateway.status.remove_pid_file",
@@ -457,6 +467,5 @@ class TestStopProfileGateway:
         )
 
         assert gateway.stop_profile_gateway() is True
-        assert calls["kill"] == 21
+        assert calls["kill"] == 1
         assert calls["remove"] == 0
->>>>>>> 62c14d5513469e27474fc9535fcdd4afa016646f

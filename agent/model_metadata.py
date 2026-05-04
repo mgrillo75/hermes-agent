@@ -16,11 +16,40 @@ from urllib.parse import urlparse
 import requests
 import yaml
 
-from utils import base_url_host_matches, base_url_hostname
+import utils as _utils
 
 from hermes_constants import OPENROUTER_MODELS_URL
 
 logger = logging.getLogger(__name__)
+
+
+def _base_url_hostname_fallback(base_url: str) -> str:
+    raw = (base_url or "").strip()
+    if not raw:
+        return ""
+    parsed = urlparse(raw if "://" in raw else f"//{raw}")
+    return (parsed.hostname or "").lower().rstrip(".")
+
+
+def _base_url_host_matches_fallback(base_url: str, domain: str) -> bool:
+    hostname = base_url_hostname(base_url)
+    if not hostname:
+        return False
+    normalized_domain = (domain or "").strip().lower().rstrip(".")
+    if not normalized_domain:
+        return False
+    return hostname == normalized_domain or hostname.endswith("." + normalized_domain)
+
+
+# Compatibility shim for long-lived gateway processes that still have an older
+# ``utils`` module object cached in memory. Importing the module itself still
+# succeeds, so fall back to local helpers instead of crashing on attribute import.
+base_url_hostname = getattr(_utils, "base_url_hostname", _base_url_hostname_fallback)
+base_url_host_matches = getattr(
+    _utils,
+    "base_url_host_matches",
+    _base_url_host_matches_fallback,
+)
 
 
 def _resolve_requests_verify() -> bool | str:

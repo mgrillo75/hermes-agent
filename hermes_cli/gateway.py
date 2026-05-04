@@ -311,16 +311,6 @@ def _graceful_restart_via_sigusr1(pid: int, drain_timeout: float) -> bool:
         False if SIGUSR1 couldn't be sent or the process didn't exit in
         time (caller should fall back to a harder restart path).
     """
-<<<<<<< HEAD
-    _exclude = exclude_pids or set()
-    pids = [pid for pid in _get_service_pids() if pid not in _exclude]
-    for pid in _collect_gateway_pids_from_pid_files(
-        exclude_pids=_exclude,
-        all_profiles=all_profiles,
-    ):
-        if pid not in pids:
-            pids.append(pid)
-=======
     if not hasattr(signal, "SIGUSR1"):
         return False
     if pid <= 0:
@@ -366,17 +356,6 @@ def _scan_gateway_pids(exclude_pids: set[int], all_profiles: bool = False) -> li
     discover gateways outside the current profile.
     """
     pids: list[int] = []
-    patterns = [
-        "hermes_cli.main gateway",
-        "hermes_cli.main --profile",
-        "hermes_cli.main -p",
-        "hermes_cli/main.py gateway",
-        "hermes_cli/main.py --profile",
-        "hermes_cli/main.py -p",
-        "hermes gateway",
-        "gateway/run.py",
-    ]
->>>>>>> 62c14d5513469e27474fc9535fcdd4afa016646f
     current_home = str(get_hermes_home().resolve())
     current_profile_arg = _profile_arg(current_home)
     current_profile_name = current_profile_arg.split()[-1] if current_profile_arg else ""
@@ -412,13 +391,7 @@ def _scan_gateway_pids(exclude_pids: set[int], all_profiles: bool = False) -> li
                     current_cmd = line[len("CommandLine="):]
                 elif line.startswith("ProcessId="):
                     pid_str = line[len("ProcessId="):]
-<<<<<<< HEAD
                     if _looks_like_gateway_command(current_cmd) and (all_profiles or _matches_current_profile(current_cmd)):
-=======
-                    if any(p in current_cmd for p in patterns) and (
-                        all_profiles or _matches_current_profile(current_cmd)
-                    ):
->>>>>>> 62c14d5513469e27474fc9535fcdd4afa016646f
                         try:
                             _append_unique_pid(pids, int(pid_str), exclude_pids)
                         except ValueError:
@@ -457,17 +430,8 @@ def _scan_gateway_pids(exclude_pids: set[int], all_profiles: bool = False) -> li
 
                 if pid is None:
                     continue
-<<<<<<< HEAD
-                if pid == os.getpid() or pid in pids or pid in _exclude:
-                    continue
                 if _looks_like_gateway_command(command) and (all_profiles or _matches_current_profile(command)):
-                    pids.append(pid)
-=======
-                if any(pattern in command for pattern in patterns) and (
-                    all_profiles or _matches_current_profile(command)
-                ):
                     _append_unique_pid(pids, pid, exclude_pids)
->>>>>>> 62c14d5513469e27474fc9535fcdd4afa016646f
     except (OSError, subprocess.TimeoutExpired):
         return []
 
@@ -492,10 +456,19 @@ def find_gateway_pids(exclude_pids: set | None = None, all_profiles: bool = Fals
         try:
             from gateway.status import get_running_pid
 
-            _append_unique_pid(pids, get_running_pid(), _exclude)
+            try:
+                current_pid = get_running_pid(cleanup_stale=False)
+            except TypeError:
+                current_pid = get_running_pid()
+            _append_unique_pid(pids, current_pid, _exclude)
         except Exception:
             pass
     for pid in _get_service_pids():
+        _append_unique_pid(pids, pid, _exclude)
+    for pid in _collect_gateway_pids_from_pid_files(
+        exclude_pids=_exclude,
+        all_profiles=all_profiles,
+    ):
         _append_unique_pid(pids, pid, _exclude)
     for pid in _scan_gateway_pids(_exclude, all_profiles=all_profiles):
         _append_unique_pid(pids, pid, _exclude)
@@ -960,7 +933,9 @@ class UserSystemdUnavailableError(RuntimeError):
 
 def _user_dbus_socket_path() -> Path:
     """Return the expected per-user D-Bus socket path (regardless of existence)."""
-    xdg = os.environ.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}"
+    getuid = getattr(os, "getuid", None)
+    uid = getuid() if callable(getuid) else 0
+    xdg = os.environ.get("XDG_RUNTIME_DIR") or f"/run/user/{uid}"
     return Path(xdg) / "bus"
 
 
@@ -973,7 +948,10 @@ def _ensure_user_systemd_env() -> None:
     We detect the standard socket path and set the vars so all subsequent
     subprocess calls inherit them.
     """
-    uid = os.getuid()
+    getuid = getattr(os, "getuid", None)
+    if not callable(getuid):
+        return
+    uid = getuid()
     if "XDG_RUNTIME_DIR" not in os.environ:
         runtime_dir = f"/run/user/{uid}"
         if Path(runtime_dir).exists():
@@ -4290,17 +4268,7 @@ def _gateway_command_inner(args):
             _print_gateway_process_mismatch(snapshot)
         else:
             # Check for manually running processes
-<<<<<<< HEAD
-            try:
-                from gateway.status import get_running_pid
-                current_profile_pid = get_running_pid()
-            except ImportError:
-                current_profile_pid = None
-
-            pids = [current_profile_pid] if current_profile_pid is not None else find_gateway_pids()
-=======
             pids = list(snapshot.gateway_pids)
->>>>>>> 62c14d5513469e27474fc9535fcdd4afa016646f
             if pids:
                 print(f"✓ Gateway is running (PID: {', '.join(map(str, pids))})")
                 print("  (Running manually, not as a system service)")

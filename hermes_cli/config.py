@@ -2399,11 +2399,7 @@ def warn_deprecated_cwd_env_vars(config: Optional[Dict[str, Any]] = None) -> Non
     These env vars are deprecated — the canonical setting is terminal.cwd
     in config.yaml.  Prints a migration hint to stderr.
     """
-<<<<<<< HEAD
-    import os, sys
     from hermes_constants import display_hermes_home
-=======
->>>>>>> 62c14d5513469e27474fc9535fcdd4afa016646f
     messaging_cwd = os.environ.get("MESSAGING_CWD")
     terminal_cwd_env = os.environ.get("TERMINAL_CWD")
 

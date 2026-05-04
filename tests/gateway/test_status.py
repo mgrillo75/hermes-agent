@@ -220,6 +220,96 @@ class TestGatewayPidState:
         finally:
             status.release_gateway_runtime_lock()
 
+    def test_get_running_pid_falls_back_to_live_runtime_status_record(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        runtime_pid = 8692
+        (tmp_path / "gateway_state.json").write_text(json.dumps({
+            "pid": runtime_pid,
+            "kind": "hermes-gateway",
+            "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+            "start_time": 456,
+            "gateway_state": "running",
+            "platforms": {
+                "telegram": {"state": "connected"},
+                "webhook": {"state": "connected"},
+            },
+        }))
+
+        monkeypatch.setattr(status, "is_gateway_runtime_lock_active", lambda lock_path=None: True)
+        monkeypatch.setattr(status, "_read_gateway_lock_record", lambda lock_path=None: None)
+        monkeypatch.setattr(status, "pid_is_running", lambda pid: pid == runtime_pid)
+        monkeypatch.setattr(status, "_get_process_start_time", lambda pid: 456)
+        monkeypatch.setattr(status, "_read_process_cmdline", lambda pid: None)
+
+        assert not (tmp_path / "gateway.pid").exists()
+        assert status.get_running_pid() == runtime_pid
+
+    def test_get_running_pid_explicit_pid_path_ignores_default_runtime_status(self, tmp_path, monkeypatch):
+        default_home = tmp_path / "default-home"
+        explicit_home = tmp_path / "explicit-home"
+        default_home.mkdir()
+        explicit_home.mkdir()
+        runtime_pid = 8692
+        (default_home / "gateway_state.json").write_text(json.dumps({
+            "pid": runtime_pid,
+            "kind": "hermes-gateway",
+            "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+            "start_time": 456,
+            "gateway_state": "running",
+        }))
+        explicit_pid_path = explicit_home / "gateway.pid"
+
+        monkeypatch.setenv("HERMES_HOME", str(default_home))
+        monkeypatch.setattr(status, "is_gateway_runtime_lock_active", lambda lock_path=None: True)
+        monkeypatch.setattr(status, "_read_gateway_lock_record", lambda lock_path=None: None)
+        monkeypatch.setattr(status, "pid_is_running", lambda pid: pid == runtime_pid)
+        monkeypatch.setattr(status, "_get_process_start_time", lambda pid: 456)
+        monkeypatch.setattr(status, "_read_process_cmdline", lambda pid: None)
+
+        assert status.get_running_pid(explicit_pid_path, cleanup_stale=False) is None
+
+    def test_get_running_pid_rejects_dead_runtime_status_record(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        lock_path = tmp_path / "gateway.lock"
+        lock_path.write_text("")
+        (tmp_path / "gateway_state.json").write_text(json.dumps({
+            "pid": 8692,
+            "kind": "hermes-gateway",
+            "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+            "start_time": 456,
+            "gateway_state": "running",
+        }))
+
+        monkeypatch.setattr(status, "is_gateway_runtime_lock_active", lambda lock_path=None: True)
+        monkeypatch.setattr(status, "_read_gateway_lock_record", lambda lock_path=None: None)
+        monkeypatch.setattr(status, "pid_is_running", lambda pid: False)
+        monkeypatch.setattr(status, "_get_process_start_time", lambda pid: 456)
+        monkeypatch.setattr(status, "_read_process_cmdline", lambda pid: None)
+
+        assert status.get_running_pid() is None
+        assert not (tmp_path / "gateway.pid").exists()
+        assert not lock_path.exists()
+        assert (tmp_path / "gateway_state.json").exists()
+
+    def test_get_running_pid_rejects_stopped_runtime_status_record(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        runtime_pid = 8692
+        (tmp_path / "gateway_state.json").write_text(json.dumps({
+            "pid": runtime_pid,
+            "kind": "hermes-gateway",
+            "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+            "start_time": 456,
+            "gateway_state": "stopped",
+        }))
+
+        monkeypatch.setattr(status, "is_gateway_runtime_lock_active", lambda lock_path=None: True)
+        monkeypatch.setattr(status, "_read_gateway_lock_record", lambda lock_path=None: None)
+        monkeypatch.setattr(status, "pid_is_running", lambda pid: True)
+        monkeypatch.setattr(status, "_get_process_start_time", lambda pid: 456)
+        monkeypatch.setattr(status, "_read_process_cmdline", lambda pid: None)
+
+        assert status.get_running_pid() is None
+
     def test_get_running_pid_removes_stale_pid_file_for_other_process(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
         pid_path = tmp_path / "gateway.pid"
@@ -408,6 +498,24 @@ class TestTerminatePid:
 
 
 class TestScopedLocks:
+    def test_get_lock_dir_windows_uses_hermes_home_root(self, tmp_path, monkeypatch):
+        hermes_home = tmp_path / "Users" / "Miguel" / ".hermes" / "profiles" / "ops"
+        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.delenv("HERMES_GATEWAY_LOCK_DIR", raising=False)
+        monkeypatch.delenv("XDG_STATE_HOME", raising=False)
+        monkeypatch.setattr(status, "_IS_WINDOWS", True)
+        monkeypatch.setattr(
+            status.Path,
+            "home",
+            lambda: tmp_path / "Windows" / "System32" / "config" / "systemprofile",
+        )
+
+        lock_dir = status._get_lock_dir()
+
+        assert lock_dir == (
+            tmp_path / "Users" / "Miguel" / ".local" / "state" / "hermes" / "gateway-locks"
+        )
+
     def test_acquire_scoped_lock_rejects_live_other_process(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HERMES_GATEWAY_LOCK_DIR", str(tmp_path / "locks"))
         lock_path = tmp_path / "locks" / "telegram-bot-token-2bb80d537b1da3e3.lock"
@@ -425,6 +533,41 @@ class TestScopedLocks:
 
         assert acquired is False
         assert existing["pid"] == 99999
+
+    def test_acquire_scoped_lock_can_replace_live_owner(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("HERMES_GATEWAY_LOCK_DIR", str(tmp_path / "locks"))
+        monkeypatch.setenv("HERMES_GATEWAY_REPLACE_SCOPED_LOCKS", "1")
+        lock_path = tmp_path / "locks" / "telegram-bot-token-2bb80d537b1da3e3.lock"
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        lock_path.write_text(json.dumps({
+            "pid": 99999,
+            "start_time": 123,
+            "kind": "hermes-gateway",
+        }))
+
+        running = {"alive": True}
+        terminate_calls = []
+
+        monkeypatch.setattr(status, "_get_process_start_time", lambda pid: 123 if running["alive"] else None)
+        monkeypatch.setattr(status, "pid_is_running", lambda pid: running["alive"])
+
+        def fake_terminate_pid(pid, force=False):
+            terminate_calls.append((pid, force))
+            running["alive"] = False
+
+        monkeypatch.setattr(status, "terminate_pid", fake_terminate_pid)
+
+        acquired, _ = status.acquire_scoped_lock(
+            "telegram-bot-token",
+            "secret",
+            metadata={"platform": "telegram"},
+        )
+
+        assert acquired is True
+        assert terminate_calls == [(99999, False)]
+        payload = json.loads(lock_path.read_text())
+        assert payload["pid"] == os.getpid()
+        assert payload["metadata"]["platform"] == "telegram"
 
     def test_acquire_scoped_lock_replaces_stale_record(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HERMES_GATEWAY_LOCK_DIR", str(tmp_path / "locks"))

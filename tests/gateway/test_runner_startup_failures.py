@@ -184,12 +184,6 @@ async def test_start_gateway_replace_force_uses_terminate_pid(monkeypatch, tmp_p
         async def stop(self):
             return None
 
-<<<<<<< HEAD
-    monkeypatch.setattr("gateway.status.get_running_pid", lambda: 42)
-    monkeypatch.setattr("gateway.status.pid_is_running", lambda pid: True)
-    monkeypatch.setattr("gateway.status.remove_pid_file", lambda: None)
-    monkeypatch.setattr("gateway.status.release_all_scoped_locks", lambda: 0)
-=======
     # get_running_pid returns 42 before we kill the old gateway, then None
     # after remove_pid_file() clears the record (reflects real behavior).
     _pid_state = {"alive": True}
@@ -203,7 +197,7 @@ async def test_start_gateway_replace_force_uses_terminate_pid(monkeypatch, tmp_p
         "gateway.status.release_all_scoped_locks",
         lambda **kwargs: 0,
     )
->>>>>>> 62c14d5513469e27474fc9535fcdd4afa016646f
+    monkeypatch.setattr("gateway.status.pid_is_running", lambda pid: True)
     monkeypatch.setattr("gateway.status.terminate_pid", lambda pid, force=False: calls.append((pid, force)))
     monkeypatch.setattr("gateway.run.os.getpid", lambda: 100)
     monkeypatch.setattr("time.sleep", lambda _: None)

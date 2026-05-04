@@ -51,6 +51,22 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+
+def _configure_stdio_encoding() -> None:
+    """Avoid Windows console crashes when status commands print Unicode."""
+    for stream_name in ("stdout", "stderr"):
+        stream = getattr(sys, stream_name, None)
+        if stream is None or not hasattr(stream, "reconfigure"):
+            continue
+        try:
+            stream.reconfigure(errors="replace")
+        except (OSError, ValueError):
+            pass
+
+
+_configure_stdio_encoding()
+
+
 def _add_accept_hooks_flag(parser) -> None:
     """Attach the ``--accept-hooks`` flag.  Shared across every agent
     subparser so the flag works regardless of CLI position."""

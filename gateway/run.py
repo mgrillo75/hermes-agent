@@ -10946,19 +10946,15 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
     # The PID file is scoped to HERMES_HOME, so future multi-profile
     # setups (each profile using a distinct HERMES_HOME) will naturally
     # allow concurrent instances without tripping this guard.
-<<<<<<< HEAD
-    import time as _time
-    from gateway.status import get_running_pid, pid_is_running, remove_pid_file, terminate_pid
-=======
     from gateway.status import (
         acquire_gateway_runtime_lock,
         get_running_pid,
         get_process_start_time,
+        pid_is_running,
         release_gateway_runtime_lock,
         remove_pid_file,
         terminate_pid,
     )
->>>>>>> 62c14d5513469e27474fc9535fcdd4afa016646f
     existing_pid = get_running_pid()
     if existing_pid is not None and existing_pid != os.getpid():
         if replace:
@@ -10996,16 +10992,9 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
                 return False
             # Wait up to 10 seconds for the old process to exit
             for _ in range(20):
-<<<<<<< HEAD
                 if not pid_is_running(existing_pid):
-=======
-                try:
-                    os.kill(existing_pid, 0)
-                    time.sleep(0.5)
-                except (ProcessLookupError, PermissionError):
->>>>>>> 62c14d5513469e27474fc9535fcdd4afa016646f
                     break  # Process is gone
-                _time.sleep(0.5)
+                time.sleep(0.5)
             else:
                 # Still alive after 10s — force kill
                 logger.warning(

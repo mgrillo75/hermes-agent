@@ -17,6 +17,7 @@ import os
 import signal
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from hermes_constants import get_hermes_home
@@ -60,8 +61,32 @@ def _get_lock_dir() -> Path:
     override = os.getenv("HERMES_GATEWAY_LOCK_DIR")
     if override:
         return Path(override)
-    state_home = Path(os.getenv("XDG_STATE_HOME", Path.home() / ".local" / "state"))
+
+    state_home_override = os.getenv("XDG_STATE_HOME")
+    if state_home_override:
+        state_home = Path(state_home_override)
+    elif _IS_WINDOWS:
+        state_home = _get_windows_state_home()
+    else:
+        state_home = Path.home() / ".local" / "state"
     return state_home / "hermes" / _LOCKS_DIRNAME
+
+
+def _get_windows_state_home() -> Path:
+    """Return a Windows state-home path that matches the configured HERMES_HOME.
+
+    Windows services often run as ``LocalSystem`` while targeting a user-owned
+    ``HERMES_HOME`` such as ``C:/Users/alice/.hermes``.  Using ``Path.home()``
+    for scoped lock files would then split lock ownership across
+    ``systemprofile`` and the real user home, allowing duplicate Telegram
+    pollers. When ``HERMES_HOME`` lives under a ``.hermes`` tree, derive the
+    lock root from that user home instead.
+    """
+    hermes_home = get_hermes_home()
+    for candidate in (hermes_home, *hermes_home.parents):
+        if candidate.name.lower() == ".hermes":
+            return candidate.parent / ".local" / "state"
+    return Path.home() / ".local" / "state"
 
 
 def _utc_now_iso() -> str:
@@ -298,7 +323,10 @@ def _read_pid_record(pid_path: Optional[Path] = None) -> Optional[dict]:
     if not pid_path.exists():
         return None
 
-    raw = pid_path.read_text().strip()
+    try:
+        raw = pid_path.read_text().strip()
+    except OSError:
+        return None
     if not raw:
         return None
 
@@ -318,7 +346,23 @@ def _read_pid_record(pid_path: Optional[Path] = None) -> Optional[dict]:
 
 
 def _read_gateway_lock_record(lock_path: Optional[Path] = None) -> Optional[dict[str, Any]]:
-    return _read_pid_record(lock_path or _get_gateway_lock_path())
+    resolved_lock_path = lock_path or _get_gateway_lock_path()
+    if _gateway_lock_handle is not None and resolved_lock_path == _get_gateway_lock_path():
+        try:
+            pos = _gateway_lock_handle.tell()
+            _gateway_lock_handle.seek(0)
+            raw = _gateway_lock_handle.read().strip()
+            _gateway_lock_handle.seek(pos)
+        except OSError:
+            return None
+        if not raw:
+            return None
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError:
+            return None
+        return payload if isinstance(payload, dict) else None
+    return _read_pid_record(resolved_lock_path)
 
 
 def _pid_from_record(record: Optional[dict[str, Any]]) -> Optional[int]:
@@ -521,6 +565,18 @@ def read_runtime_status() -> Optional[dict[str, Any]]:
     return _read_json_file(_get_runtime_status_path())
 
 
+def _runtime_status_record_for_liveness(pid_path: Path) -> Optional[dict[str, Any]]:
+    """Return runtime status when it represents a live-ish gateway state."""
+    record = _read_json_file(pid_path.with_name(_RUNTIME_STATUS_FILE))
+    if not record:
+        return None
+
+    if record.get("gateway_state") not in {"starting", "running"}:
+        return None
+
+    return record
+
+
 def remove_pid_file() -> None:
     """Remove the gateway PID file, but only if it belongs to this process.
 
@@ -616,14 +672,7 @@ def acquire_scoped_lock(scope: str, identity: str, metadata: Optional[dict[str, 
 
         stale = existing_pid is None
         if not stale:
-<<<<<<< HEAD
             if not pid_is_running(existing_pid):
-=======
-            try:
-                os.kill(existing_pid, 0)
-            except (ProcessLookupError, PermissionError, OSError):
-                # Windows raises OSError with WinError 87 for invalid pid check
->>>>>>> 62c14d5513469e27474fc9535fcdd4afa016646f
                 stale = True
             else:
                 current_start = _get_process_start_time(existing_pid)
@@ -654,7 +703,13 @@ def acquire_scoped_lock(scope: str, identity: str, metadata: Optional[dict[str, 
             except OSError:
                 pass
         else:
-            return False, existing
+            if _should_replace_scoped_lock_owner():
+                if _replace_scoped_lock_owner(lock_path, existing):
+                    existing = None
+                else:
+                    return False, existing
+            else:
+                return False, existing
 
     try:
         fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
@@ -670,6 +725,49 @@ def acquire_scoped_lock(scope: str, identity: str, metadata: Optional[dict[str, 
             pass
         raise
     return True, None
+
+
+def _should_replace_scoped_lock_owner() -> bool:
+    raw = os.getenv("HERMES_GATEWAY_REPLACE_SCOPED_LOCKS", "")
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _replace_scoped_lock_owner(lock_path: Path, existing: dict[str, Any]) -> bool:
+    """Terminate the existing scoped-lock owner when replacement is enabled."""
+    try:
+        existing_pid = int(existing["pid"])
+    except (KeyError, TypeError, ValueError):
+        return False
+
+    if existing_pid == os.getpid():
+        return False
+
+    expected_start = existing.get("start_time")
+    try:
+        terminate_pid(existing_pid, force=False)
+    except (OSError, ProcessLookupError, PermissionError, SystemError):
+        return False
+
+    deadline = time.time() + 10
+    while time.time() < deadline:
+        current_start = _get_process_start_time(existing_pid)
+        if not pid_is_running(existing_pid):
+            break
+        if (
+            expected_start is not None
+            and current_start is not None
+            and current_start != expected_start
+        ):
+            break
+        time.sleep(0.1)
+    else:
+        return False
+
+    try:
+        lock_path.unlink(missing_ok=True)
+    except OSError:
+        pass
+    return True
 
 
 def release_scoped_lock(scope: str, identity: str) -> None:
@@ -877,57 +975,22 @@ def get_running_pid(
         _cleanup_invalid_pid_path(resolved_pid_path, cleanup_stale=cleanup_stale)
         return None
 
-<<<<<<< HEAD
-    try:
-        pid = int(record["pid"])
-    except (KeyError, TypeError, ValueError):
-        _remove_pid_file_if_matches(record)
-        return None
-
-    if not pid_is_running(pid):
-        _remove_pid_file_if_matches(record)
-        return None
-
-    recorded_start = record.get("start_time")
-    current_start = _get_process_start_time(pid)
-    if recorded_start is not None and current_start is not None and current_start != recorded_start:
-        _remove_pid_file_if_matches(record)
-        return None
-
-    if not _looks_like_gateway_process(pid):
-        if not _record_looks_like_gateway(record):
-            _remove_pid_file_if_matches(record)
-            return None
-=======
     primary_record = _read_pid_record(resolved_pid_path)
     fallback_record = _read_gateway_lock_record(resolved_lock_path)
+    runtime_record = _runtime_status_record_for_liveness(resolved_pid_path)
 
-    for record in (primary_record, fallback_record):
+    for record in (primary_record, fallback_record, runtime_record):
         pid = _pid_from_record(record)
         if pid is None:
             continue
 
-        try:
-            os.kill(pid, 0)  # signal 0 = existence check, no actual signal sent
-        except ProcessLookupError:
-            continue
-        except PermissionError:
-            # The process exists but belongs to another user/service scope.
-            # With the runtime lock still held, prefer keeping it visible
-            # rather than deleting the PID file as "stale".
-            if _record_looks_like_gateway(record):
-                return pid
-            continue
-        except OSError:
-            # Windows raises OSError with WinError 87 for an invalid pid
-            # (process is definitely gone). Treat as "process doesn't exist".
+        if not pid_is_running(pid):
             continue
 
         recorded_start = record.get("start_time")
         current_start = _get_process_start_time(pid)
         if recorded_start is not None and current_start is not None and current_start != recorded_start:
             continue
->>>>>>> 62c14d5513469e27474fc9535fcdd4afa016646f
 
         if _looks_like_gateway_process(pid) or _record_looks_like_gateway(record):
             return pid
