@@ -29,21 +29,32 @@ Design constraints:
 from __future__ import annotations
 
 import errno
-import fcntl
 import os
 import select
 import signal
 import struct
 import sys
-import termios
 import time
 from typing import Optional, Sequence
 
+_IS_WINDOWS = sys.platform.startswith("win")
+
 try:
-    import ptyprocess  # type: ignore
-    _PTY_AVAILABLE = not sys.platform.startswith("win")
+    if _IS_WINDOWS:
+        ptyprocess = None  # type: ignore
+        fcntl = None  # type: ignore
+        termios = None  # type: ignore
+        _PTY_AVAILABLE = False
+    else:
+        import fcntl
+        import termios
+        import ptyprocess  # type: ignore
+
+        _PTY_AVAILABLE = True
 except ImportError:  # pragma: no cover - dev env without ptyprocess
     ptyprocess = None  # type: ignore
+    fcntl = None  # type: ignore
+    termios = None  # type: ignore
     _PTY_AVAILABLE = False
 
 
@@ -99,7 +110,7 @@ class PtyBridge:
         ordinary exec failures (missing binary, bad cwd, etc.).
         """
         if not _PTY_AVAILABLE:
-            if sys.platform.startswith("win"):
+            if _IS_WINDOWS:
                 raise PtyUnavailableError(
                     "Pseudo-terminals are unavailable on this platform. "
                     "Hermes Agent supports Windows only via WSL."

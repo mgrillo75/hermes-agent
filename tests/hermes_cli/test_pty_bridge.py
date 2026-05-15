@@ -9,16 +9,16 @@ from __future__ import annotations
 import os
 import sys
 import time
+from importlib.util import find_spec
 
 import pytest
-
-pytest.importorskip("ptyprocess", reason="ptyprocess not installed")
 
 from hermes_cli.pty_bridge import PtyBridge, PtyUnavailableError
 
 
 skip_on_windows = pytest.mark.skipif(
-    sys.platform.startswith("win"), reason="PTY bridge is POSIX-only"
+    sys.platform.startswith("win") or find_spec("ptyprocess") is None,
+    reason="PTY bridge requires POSIX and ptyprocess",
 )
 
 
@@ -177,3 +177,11 @@ class TestPtyBridgeUnavailable:
     def test_error_carries_user_message(self):
         err = PtyUnavailableError("platform not supported")
         assert "platform" in str(err)
+
+    @pytest.mark.skipif(
+        not sys.platform.startswith("win"), reason="native Windows fallback only"
+    )
+    def test_spawn_raises_user_message_on_native_windows(self):
+        with pytest.raises(PtyUnavailableError) as exc:
+            PtyBridge.spawn([sys.executable, "-c", "print('unused')"])
+        assert "Windows only via WSL" in str(exc.value)
