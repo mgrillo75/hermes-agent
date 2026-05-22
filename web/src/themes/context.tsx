@@ -93,12 +93,15 @@ const DENSITY_MULTIPLIERS: Record<ThemeDensity, string> = {
   spacious: "1.2",
 };
 
+const GLOBAL_UI_FONT_SANS = `"Arial", "Helvetica Neue", Helvetica, sans-serif`;
+const GLOBAL_UI_BASE_SIZE = "10pt";
+
 function typographyVars(typo: ThemeTypography): Record<string, string> {
   return {
-    "--theme-font-sans": typo.fontSans,
+    "--theme-font-sans": GLOBAL_UI_FONT_SANS,
     "--theme-font-mono": typo.fontMono,
-    "--theme-font-display": typo.fontDisplay ?? typo.fontSans,
-    "--theme-base-size": typo.baseSize,
+    "--theme-font-display": GLOBAL_UI_FONT_SANS,
+    "--theme-base-size": GLOBAL_UI_BASE_SIZE,
     "--theme-line-height": typo.lineHeight,
     "--theme-letter-spacing": typo.letterSpacing,
   };
@@ -349,6 +352,8 @@ function applyFontOverride(fontId: string | undefined) {
 function applyTheme(theme: DashboardTheme) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
+  root.dataset.theme = theme.name;
+  root.style.setProperty("--theme-name", theme.name);
 
   // Clear any overrides from a previous theme before applying the new set.
   for (const cssVar of ALL_OVERRIDE_VARS) {

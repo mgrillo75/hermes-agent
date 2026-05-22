@@ -481,6 +481,8 @@ export const ru: Translations = {
   theme: {
     title: "Тема",
     switchTheme: "Сменить тему",
+    bodycamOn: "Bodycam Mode",
+    bodycamOff: "Exit Bodycam",
   },
 
   achievements: {

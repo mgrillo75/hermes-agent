@@ -535,6 +535,8 @@ export const en: Translations = {
     fontSans: "Sans",
     fontSerif: "Serif",
     fontMono: "Mono",
+    bodycamOn: "Bodycam Mode",
+    bodycamOff: "Exit Bodycam",
   },
 
   achievements: {

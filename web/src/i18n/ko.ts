@@ -480,6 +480,8 @@ export const ko: Translations = {
   theme: {
     title: "테마",
     switchTheme: "테마 전환",
+    bodycamOn: "Bodycam Mode",
+    bodycamOff: "Exit Bodycam",
   },
 
   achievements: {

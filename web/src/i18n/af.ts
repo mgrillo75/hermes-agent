@@ -481,6 +481,8 @@ export const af: Translations = {
   theme: {
     title: "Tema",
     switchTheme: "Wissel tema",
+    bodycamOn: "Bodycam Mode",
+    bodycamOff: "Exit Bodycam",
   },
 
   achievements: {

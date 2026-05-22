@@ -559,6 +559,8 @@ export interface Translations {
     fontSans?: string;
     fontSerif?: string;
     fontMono?: string;
+    bodycamOn: string;
+    bodycamOff: string;
   };
 
   // ── Achievements plugin (plugins/hermes-achievements) ──

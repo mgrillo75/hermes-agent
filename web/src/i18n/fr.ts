@@ -482,6 +482,8 @@ export const fr: Translations = {
   theme: {
     title: "Thème",
     switchTheme: "Changer de thème",
+    bodycamOn: "Bodycam Mode",
+    bodycamOff: "Exit Bodycam",
   },
   achievements: {
     hero: {
