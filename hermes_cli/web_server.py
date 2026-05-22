@@ -297,7 +297,7 @@ _SCHEMA_OVERRIDES: Dict[str, Dict[str, Any]] = {
     "dashboard.theme": {
         "type": "select",
         "description": "Web dashboard visual theme",
-        "options": ["default", "midnight", "ember", "mono", "cyberpunk", "rose"],
+        "options": ["default", "midnight", "ember", "mono", "cyberpunk", "rose", "bodycam", "openfang"],
     },
     "display.resume_display": {
         "type": "select",
@@ -3757,6 +3757,8 @@ _BUILTIN_DASHBOARD_THEMES = [
     {"name": "mono",      "label": "Mono",           "description": "Clean grayscale — minimal and focused"},
     {"name": "cyberpunk", "label": "Cyberpunk",      "description": "Neon green on black — matrix terminal"},
     {"name": "rose",      "label": "Rosé",           "description": "Soft pink and warm ivory — easy on the eyes"},
+    {"name": "bodycam",   "label": "Bodycam",        "description": "Police body camera aesthetic with purple neon glow"},
+    {"name": "openfang",  "label": "OpenFang",       "description": "Premium dark neutrals with sharp orange command accents"},
 ]
 
 

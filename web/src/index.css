@@ -69,12 +69,11 @@
 
   /* Typography tokens — rewritten by ThemeProvider. Defaults match the
      system stack so themes that don't override look native. */
-  --theme-font-sans: system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  --theme-font-sans: "Arial", "Helvetica Neue", Helvetica, sans-serif;
   --theme-font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo,
     Consolas, monospace;
   --theme-font-display: var(--theme-font-sans);
-  --theme-base-size: 15px;
+  --theme-base-size: 10pt;
   --theme-line-height: 1.55;
   --theme-letter-spacing: 0;
 
@@ -207,6 +206,14 @@ code { font-size: 0.875rem; }
    still apply here. */
 .font-mono-ui {
   font-family: var(--theme-font-mono);
+}
+
+.font-mondwest,
+.font-compressed,
+.font-expanded,
+.font-courier,
+.font-sans {
+  font-family: "Arial", "Helvetica Neue", Helvetica, sans-serif !important;
 }
 
 /* Subtle grain overlay for badges. */

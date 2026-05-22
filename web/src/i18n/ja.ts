@@ -425,6 +425,8 @@ export const ja: Translations = {
   theme: {
     title: "テーマ",
     switchTheme: "テーマを切り替え",
+    bodycamOn: "Bodycam Mode",
+    bodycamOff: "Exit Bodycam",
   },
 
   achievements: {

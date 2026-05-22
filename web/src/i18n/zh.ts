@@ -420,6 +420,8 @@ export const zh: Translations = {
   theme: {
     title: "主题",
     switchTheme: "切换主题",
+    bodycamOn: "Bodycam Mode",
+    bodycamOff: "Exit Bodycam",
   },
 
   achievements: {
