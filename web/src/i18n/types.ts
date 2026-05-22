@@ -448,6 +448,8 @@ export interface Translations {
   theme: {
     title: string;
     switchTheme: string;
+    bodycamOn: string;
+    bodycamOff: string;
   };
 
   // ── Achievements plugin (plugins/hermes-achievements) ──
