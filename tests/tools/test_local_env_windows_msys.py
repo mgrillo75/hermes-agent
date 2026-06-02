@@ -24,6 +24,7 @@ from unittest.mock import patch
 from tools.environments import local as local_mod
 from tools.environments.local import (
     LocalEnvironment,
+    _find_bash,
     _msys_to_windows_path,
     _resolve_safe_cwd,
 )
@@ -68,6 +69,25 @@ class TestMsysToWindowsPath:
     def test_empty_string(self, monkeypatch):
         monkeypatch.setattr(local_mod, "_IS_WINDOWS", True)
         assert _msys_to_windows_path("") == ""
+
+
+class TestFindBashWindows:
+    def test_prefers_git_bash_over_wsl_bash_on_path(self, monkeypatch):
+        monkeypatch.setattr(local_mod, "_IS_WINDOWS", True)
+        monkeypatch.setenv("LOCALAPPDATA", r"C:\Users\MiguelGrillo\AppData\Local")
+        monkeypatch.setenv("ProgramFiles", r"C:\Program Files")
+        monkeypatch.setenv("ProgramFiles(x86)", r"C:\Program Files (x86)")
+        monkeypatch.delenv("HERMES_GIT_BASH_PATH", raising=False)
+        monkeypatch.setattr(
+            local_mod.shutil,
+            "which",
+            lambda name: r"C:\WINDOWS\system32\bash.EXE" if name == "bash" else None,
+        )
+
+        git_bash = r"C:\Program Files\Git\bin\bash.exe"
+        monkeypatch.setattr(local_mod.os.path, "isfile", lambda p: p == git_bash)
+
+        assert _find_bash() == git_bash
 
 
 # ---------------------------------------------------------------------------
