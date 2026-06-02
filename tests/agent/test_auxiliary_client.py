@@ -2326,6 +2326,95 @@ class TestVisionAutoSkipsKimiCoding:
         })
 
 
+class TestCodexAuxiliaryAdapterStreamingParser:
+    """Regression coverage for SDK streams whose final response has output=None."""
+
+    def test_synthesizes_text_when_sdk_parser_fails_after_deltas(self):
+        class ParserFailureAfterDeltasStream:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def __iter__(self):
+                yield SimpleNamespace(
+                    type="response.output_text.delta",
+                    delta="decomposed task",
+                )
+                raise TypeError("'NoneType' object is not iterable")
+
+            def get_final_response(self):
+                raise AssertionError("parser failure prevents final response")
+
+        class FakeResponses:
+            def stream(self, **kwargs):
+                return ParserFailureAfterDeltasStream()
+
+        fake_client = SimpleNamespace(responses=FakeResponses())
+        adapter = _CodexCompletionsAdapter(fake_client, "gpt-5.5")
+
+        response = adapter.create(
+            messages=[{"role": "user", "content": "decompose"}],
+        )
+
+        assert response.choices[0].message.content == "decomposed task"
+        assert response.choices[0].finish_reason == "stop"
+
+    def test_reraises_sdk_parser_typeerror_when_no_output_was_collected(self):
+        class ParserFailureWithoutOutputStream:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def __iter__(self):
+                raise TypeError("'NoneType' object is not iterable")
+                yield
+
+            def get_final_response(self):
+                raise AssertionError("parser failure prevents final response")
+
+        class FakeResponses:
+            def stream(self, **kwargs):
+                return ParserFailureWithoutOutputStream()
+
+        fake_client = SimpleNamespace(responses=FakeResponses())
+        adapter = _CodexCompletionsAdapter(fake_client, "gpt-5.5")
+
+        with pytest.raises(TypeError, match="'NoneType' object is not iterable"):
+            adapter.create(messages=[{"role": "user", "content": "decompose"}])
+
+    def test_reraises_unrelated_stream_typeerror(self):
+        class UnrelatedFailureStream:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def __iter__(self):
+                yield SimpleNamespace(
+                    type="response.output_text.delta",
+                    delta="partial",
+                )
+                raise TypeError("custom iterator bug")
+
+            def get_final_response(self):
+                raise AssertionError("parser failure prevents final response")
+
+        class FakeResponses:
+            def stream(self, **kwargs):
+                return UnrelatedFailureStream()
+
+        fake_client = SimpleNamespace(responses=FakeResponses())
+        adapter = _CodexCompletionsAdapter(fake_client, "gpt-5.5")
+
+        with pytest.raises(TypeError, match="custom iterator bug"):
+            adapter.create(messages=[{"role": "user", "content": "decompose"}])
+
+
 class TestCodexAuxiliaryAdapterTimeout:
     def test_forwards_timeout_to_responses_stream(self):
         class FakeStream:

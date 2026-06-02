@@ -92,6 +92,12 @@ export default defineConfig({
   build: {
     outDir: "../hermes_cli/web_dist",
     emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, "index.html"),
+        swarmclaw: path.resolve(__dirname, "swarmclaw.html"),
+      },
+    },
   },
   server: {
     proxy: {

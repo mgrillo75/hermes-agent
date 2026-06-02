@@ -186,6 +186,22 @@ class _FakeCreateStream:
         self.closed = True
 
 
+class _RaisingResponsesStream:
+    def __init__(self, events, exc):
+        self._events = list(events)
+        self._exc = exc
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+    def __iter__(self):
+        yield from self._events
+        raise self._exc
+
+
 def _codex_request_kwargs():
     return {
         "model": "gpt-5-codex",
@@ -479,6 +495,33 @@ def test_run_codex_stream_fallback_parses_create_stream_events(monkeypatch):
     assert calls["create"] == 1
     assert create_stream.closed is True
     assert response.output[0].content[0].text == "streamed create ok"
+
+
+def test_run_codex_stream_recovers_when_sdk_parser_fails_after_deltas(monkeypatch):
+    agent = _build_agent(monkeypatch)
+    deltas = []
+    agent.stream_delta_callback = deltas.append
+
+    def _fake_stream(**kwargs):
+        return _RaisingResponsesStream(
+            [
+                SimpleNamespace(type="response.output_text.delta", delta="worker "),
+                SimpleNamespace(type="response.output_text.delta", delta="ok"),
+            ],
+            TypeError("'NoneType' object is not iterable"),
+        )
+
+    agent.client = SimpleNamespace(
+        responses=SimpleNamespace(
+            stream=_fake_stream,
+            create=lambda **kwargs: _codex_message_response("fallback"),
+        )
+    )
+
+    response = agent._run_codex_stream(_codex_request_kwargs())
+
+    assert deltas == ["worker ", "ok"]
+    assert response.output[0].content[0].text == "worker ok"
 
 
 def test_run_conversation_codex_plain_text(monkeypatch):

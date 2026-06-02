@@ -5315,6 +5315,10 @@ def _default_spawn(
         env["HERMES_TENANT"] = task.tenant
     env["HERMES_KANBAN_TASK"] = task.id
     env["HERMES_KANBAN_WORKSPACE"] = workspace
+    # Gateway-spawned workers inherit the gateway's TERMINAL_CWD bridge.
+    # Pin terminal/file tools to the task workspace so a stale global
+    # messaging cwd cannot override the worker's Popen cwd.
+    env["TERMINAL_CWD"] = workspace
     if task.branch_name:
         env["HERMES_KANBAN_BRANCH"] = task.branch_name
     if task.current_run_id is not None:

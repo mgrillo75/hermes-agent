@@ -10,6 +10,7 @@ import codecs
 import json
 import logging
 import os
+import re
 import select
 import shlex
 import subprocess
@@ -412,6 +413,11 @@ class BaseEnvironment(ABC):
             return "$HOME"
         if cwd.startswith("~/"):
             return f"$HOME/{shlex.quote(cwd[2:])}"
+        m = re.match(r"^([A-Za-z]):[\\/]*(.*)$", cwd)
+        if m:
+            drive = m.group(1).lower()
+            tail = m.group(2).replace("\\", "/").strip("/")
+            cwd = f"/{drive}/{tail}" if tail else f"/{drive}"
         return shlex.quote(cwd)
 
     def _wrap_command(self, command: str, cwd: str) -> str:

@@ -83,6 +83,20 @@ class TestWrapCommand:
 
         assert "builtin cd -- -demo || exit 126" in wrapped
 
+    def test_windows_drive_workdir_is_rewritten_for_bash_cd(self):
+        env = _TestableEnv()
+        env._snapshot_ready = True
+        wrapped = env._wrap_command(
+            "pwd",
+            r"C:\Users\MiguelGrillo\.hermes\kanban\workspaces\t_6a6bfefb",
+        )
+
+        assert (
+            "builtin cd -- /c/Users/MiguelGrillo/.hermes/kanban/workspaces/t_6a6bfefb || exit 126"
+            in wrapped
+        )
+        assert "cd -- 'C:" not in wrapped
+
     def test_cd_failure_exit_126(self):
         env = _TestableEnv()
         env._snapshot_ready = True

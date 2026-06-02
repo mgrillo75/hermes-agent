@@ -1881,6 +1881,7 @@ class TestSharedBoardPaths:
         )
         assert env["HERMES_KANBAN_TASK"] == "t_dispatch_env"
         assert env["HERMES_KANBAN_BRANCH"] == "wt/t_dispatch_env"
+        assert env["TERMINAL_CWD"] == str(tmp_path / "ws")
 
 
 # ---------------------------------------------------------------------------
